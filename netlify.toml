@@ -1,11 +1,10 @@
 [build]
   command = "npm run build"
-  publish = "dist/aiagent"
+  publish = "dist/bookam"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
 
-# Lets Angular handle page refreshes on routes like /chat and /agents
 [[redirects]]
   from = "/*"
   to = "/index.html"
