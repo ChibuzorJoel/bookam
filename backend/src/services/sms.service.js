@@ -9,6 +9,11 @@ async function send(to, message) {
     return { provider: 'console' };
   }
 
+  if (!env.TERMII_API_KEY) {
+    logger.error('SMS_PROVIDER=termii but TERMII_API_KEY is empty. Add your Termii key to .env and restart the server.');
+    throw new AppError('Could not send the SMS right now. Please try again in a minute.', 502, 'SMS_FAILED');
+  }
+
   const res = await fetch('https://api.ng.termii.com/api/sms/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -23,10 +28,12 @@ async function send(to, message) {
     signal: AbortSignal.timeout(15000),
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    logger.error('Termii error', res.status, body);
-    throw new AppError('Could not send SMS right now. Please try again.', 502, 'SMS_FAILED');
+  // Termii answers { code: 'ok', message_id, balance } on success. Anything else is a failure, even on HTTP 200.
+  if (!res.ok || (body.code && body.code !== 'ok')) {
+    logger.error(`Termii SMS to ${to} failed: HTTP ${res.status} ${JSON.stringify(body)}`);
+    throw new AppError('Could not send the SMS right now. Please try again in a minute.', 502, 'SMS_FAILED');
   }
+  logger.info(`SMS sent to ${to} via Termii (message_id ${body.message_id}, balance ${body.balance})`);
   return body;
 }
 

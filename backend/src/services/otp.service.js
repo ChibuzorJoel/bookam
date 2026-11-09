@@ -4,6 +4,7 @@ const AppError = require('../utils/AppError');
 const { Otp } = require('../models');
 const sms = require('./sms.service');
 const email = require('./email.service');
+const logger = require('../utils/logger');
 const messages = require('../templates/messages');
 
 const OTP_TTL_MINUTES = 10;
@@ -48,7 +49,15 @@ async function verifyOtp(phone, purpose, code) {
   const invalid = () => new AppError('That code is incorrect or has expired.', 400, 'OTP_INVALID');
 
   const doc = await Otp.findOneAndUpdate({ phone, purpose }, { $inc: { attempts: 1 } }, { new: true });
-  if (!doc || doc.expiresAt < new Date()) throw invalid();
+  if (!doc) {
+    // Never logs the code itself. Tells us whether the code was issued to a different number/purpose, or already used.
+    logger.warn(`OTP verify failed: no pending code for ${phone} (${purpose}). Used already, expired and cleaned up, or requested for another number.`);
+    throw invalid();
+  }
+  if (doc.expiresAt < new Date()) {
+    logger.warn(`OTP verify failed: code for ${phone} (${purpose}) expired at ${doc.expiresAt.toISOString()}.`);
+    throw invalid();
+  }
   if (doc.attempts > MAX_ATTEMPTS) {
     await Otp.deleteOne({ _id: doc._id });
     throw new AppError('Too many wrong attempts. Please request a new code.', 429, 'OTP_LOCKED');
@@ -56,7 +65,10 @@ async function verifyOtp(phone, purpose, code) {
 
   const expected = Buffer.from(doc.codeHash, 'hex');
   const actual = Buffer.from(hashCode(phone, purpose, code), 'hex');
-  if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) throw invalid();
+  if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
+    logger.warn(`OTP verify failed: wrong code for ${phone} (${purpose}), attempt ${doc.attempts} of ${MAX_ATTEMPTS}.`);
+    throw invalid();
+  }
 
   await Otp.deleteOne({ _id: doc._id });
 }
