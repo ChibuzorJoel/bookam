@@ -1,0 +1,72 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <header class="hero">
+      <h1 class="hero__title">Simple pricing in naira</h1>
+      <p class="hero__lead">Start free. Upgrade when your customers start booking. Pay monthly, no auto-renewal, no cut of your sales.</p>
+    </header>
+
+    <div class="skeleton" *ngIf="loading" aria-busy="true" aria-label="Loading prices"><span></span><span></span><span></span></div>
+
+    <div class="notice notice--error" role="alert" *ngIf="error">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button>
+    </div>
+
+    <ng-container *ngIf="plans.length">
+      <div class="plans">
+        <article class="plan" *ngFor="let p of plans" [class.is-pop]="popular(p)">
+          <span class="plan__tag" *ngIf="popular(p)">Most popular</span>
+          <h2 class="plan__name">{{ p.name }}</h2>
+          <p class="plan__price"><strong>{{ price(p) }}</strong><span *ngIf="p.priceKobo"> / month</span></p>
+          <ul class="plan__list">
+            <li>{{ products(p) }}</li>
+            <ng-container *ngFor="let r of rows"><li *ngIf="has(p, r.key)">{{ r.label }}</li></ng-container>
+          </ul>
+          <a class="btn" [class.btn--primary]="popular(p)" [class.btn--dark]="!popular(p)" routerLink="/login" [queryParams]="query(p)">
+            {{ p.key === 'free' ? 'Start free' : 'Choose ' + p.name }}
+          </a>
+        </article>
+      </div>
+
+      <section class="panel" aria-labelledby="pr-compare">
+        <h2 id="pr-compare" class="panel__title">Compare plans</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col"><span class="sr-only">Feature</span></th>
+                <th scope="col" *ngFor="let p of plans">{{ p.name }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Products</th>
+                <td *ngFor="let p of plans">{{ p.maxProducts === null ? 'Unlimited' : p.maxProducts }}</td>
+              </tr>
+              <tr *ngFor="let r of rows">
+                <th scope="row">{{ r.label }}</th>
+                <td *ngFor="let p of plans">
+                  <span class="yes" *ngIf="has(p, r.key)" aria-label="Included">&#10003;</span>
+                  <span class="no" *ngIf="!has(p, r.key)" aria-label="Not included">&ndash;</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </ng-container>
+
+    <section class="panel" aria-labelledby="pr-faq">
+      <h2 id="pr-faq" class="panel__title">Questions</h2>
+      <details class="faq" *ngFor="let f of faq">
+        <summary>{{ f.q }}</summary>
+        <p>{{ f.a }}</p>
+      </details>
+    </section>
+
+    <section class="cta">
+      <h2>Your page can be live in five minutes.</h2>
+      <a class="btn btn--primary" routerLink="/login" [queryParams]="{ mode: 'signup' }">Create your page</a>
+    </section>
+  </div>
+</main>

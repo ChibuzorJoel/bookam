@@ -1,0 +1,149 @@
+/* ==========================================================================
+   LagosPages footer  |  footer.component.scss
+   Self-contained: carries its own tokens and wrapper.
+   ========================================================================== */
+
+$green-900: #062421;
+$green-600: #0e7c3f;
+$gold-500: #ffc21a;
+$white: #ffffff;
+
+$ease: cubic-bezier(0.22, 1, 0.36, 1);
+$bp-md: 760px;
+
+$font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-system, Arial, sans-serif;
+
+@mixin up($bp) {
+  @media (min-width: $bp) {
+    @content;
+  }
+}
+
+:host {
+  display: block;
+  font-family: $font;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+svg {
+  display: block;
+}
+
+:focus-visible {
+  outline: 3px solid $gold-500;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.wrap {
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+
+  @include up($bp-md) {
+    width: min(1180px, calc(100% - 64px));
+  }
+}
+
+/* ---------- Brand ---------- */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: $white;
+}
+
+.brand__mark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  transition: transform 0.4s $ease;
+}
+
+.brand:hover .brand__mark {
+  transform: rotate(-8deg) scale(1.06);
+}
+
+/* ---------- Footer ---------- */
+.footer {
+  background: $green-900;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.footer__stripe {
+  height: 6px;
+  background: linear-gradient(90deg, $green-600 0 33.3%, $white 33.3% 66.6%, $green-600 66.6% 100%);
+}
+
+.footer__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+  padding: clamp(40px, 6vw, 64px) 0 32px;
+
+  @include up($bp-md) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 48px;
+  }
+}
+
+.footer__about {
+  max-width: 32ch;
+  margin-top: 14px;
+}
+
+.footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 26px;
+
+  @include up($bp-md) {
+    justify-content: flex-end;
+    max-width: 440px;
+  }
+
+  a {
+    position: relative;
+    font-weight: 700;
+    color: $white;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $gold-500;
+    }
+  }
+}
+
+.footer__legal {
+  padding: 20px 0 28px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.88rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}

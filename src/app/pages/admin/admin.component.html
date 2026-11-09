@@ -1,0 +1,126 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <h1 class="top__title">Admin</h1>
+        <p class="top__lead">Businesses, plans and revenue across LagosPages.</p>
+      </div>
+      <button type="button" class="btn btn--dark btn--sm" (click)="logout()">Log out</button>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <!-- Stats -->
+    <p class="msg msg--error" role="alert" *ngIf="statsError">{{ statsError }}</p>
+    <section class="stats" *ngIf="stats" aria-label="Platform numbers">
+      <div class="tile"><span>Verified owners</span><strong>{{ stats.totals.verifiedOwners }}</strong></div>
+      <div class="tile"><span>Bookings</span><strong>{{ stats.totals.bookings }}</strong></div>
+      <div class="tile"><span>Orders</span><strong>{{ stats.totals.orders }}</strong></div>
+      <div class="tile tile--hi"><span>Monthly recurring</span><strong>{{ naira(stats.revenue.monthlyRecurring) }}</strong><small>from active paid plans</small></div>
+      <div class="tile"><span>Subscriptions paid</span><strong>{{ naira(stats.revenue.subscriptionsTotal) }}</strong><small>{{ stats.revenue.subscriptionPayments }} payments</small></div>
+      <div class="tile"><span>Deposit volume</span><strong>{{ naira(stats.revenue.depositVolume) }}</strong><small>{{ stats.revenue.depositCount }} payments, fees {{ naira(stats.revenue.paystackFees) }}</small></div>
+      <div class="tile">
+        <span>By plan</span>
+        <strong class="tile__mix">{{ count(stats.businessesByPlan, 'free') }} / {{ count(stats.businessesByPlan, 'starter') }} / {{ count(stats.businessesByPlan, 'pro') }}</strong>
+        <small>free / starter / pro</small>
+      </div>
+      <div class="tile">
+        <span>By status</span>
+        <strong class="tile__mix">{{ count(stats.businessesByStatus, 'active') }} / {{ count(stats.businessesByStatus, 'pending') }} / {{ count(stats.businessesByStatus, 'suspended') }}</strong>
+        <small>active / pending / suspended</small>
+      </div>
+    </section>
+
+    <!-- Filters -->
+    <form class="filters" [formGroup]="filters" (submit)="$event.preventDefault()" role="search">
+      <div class="field filters__q">
+        <label class="field__label" for="ad-q">Search</label>
+        <input id="ad-q" class="input" type="search" placeholder="Name, page address or WhatsApp number" autocomplete="off" formControlName="q" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="ad-status">Status</label>
+        <select id="ad-status" class="input" formControlName="status"><option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option></select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="ad-plan">Plan</label>
+        <select id="ad-plan" class="input" formControlName="plan"><option *ngFor="let p of plans" [value]="p.value">{{ p.label }}</option></select>
+      </div>
+    </form>
+
+    <p class="count" aria-live="polite" *ngIf="!loading || rows.length">{{ total }} {{ total === 1 ? 'business' : 'businesses' }}</p>
+
+    <div class="notice notice--error" role="alert" *ngIf="error">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="loadMore()">Try again</button>
+    </div>
+
+    <ul class="list">
+      <li class="rec" *ngFor="let b of rows; trackBy: trackById">
+        <div class="rec__head">
+          <div>
+            <strong class="rec__name">{{ b.name }}</strong>
+            <span class="rec__sub">lagospages.ng/{{ b.slug }} &middot; {{ b.mode }}</span>
+          </div>
+          <span class="status" [attr.data-s]="b.status">{{ b.status }}</span>
+        </div>
+        <p class="rec__line">
+          <strong class="plan" [attr.data-p]="b.plan">{{ b.plan | titlecase }}</strong>
+          <ng-container *ngIf="b.plan !== 'free'">
+            <span class="rec__muted"> {{ expired(b) ? 'expired' : 'until' }} {{ date(b.planExpiresAt) }}</span>
+          </ng-container>
+        </p>
+        <p class="rec__line rec__muted">
+          Owner {{ b.ownerId?.phone || 'unknown' }}<ng-container *ngIf="b.ownerId?.email"> &middot; {{ b.ownerId?.email }}</ng-container>
+        </p>
+        <p class="rec__line rec__muted">Joined {{ date(b.createdAt) }} &middot; last login {{ date(b.ownerId?.lastLoginAt) }}</p>
+        <p class="rec__line rec__muted" *ngIf="b.suspendedReason">Reason: {{ b.suspendedReason }}</p>
+
+        <div class="rec__actions">
+          <a class="chip" [href]="'/' + b.slug" target="_blank" rel="noopener">View page</a>
+          <button type="button" class="chip" *ngIf="b.status === 'pending'" [disabled]="saving" (click)="quick(b, 'active')">Approve</button>
+          <button type="button" class="chip" *ngIf="b.status === 'suspended'" [disabled]="saving" (click)="quick(b, 'active')">Reinstate</button>
+          <button type="button" class="chip" [attr.aria-expanded]="editing?._id === b._id" (click)="edit(b)">{{ editing?._id === b._id ? 'Close' : 'Edit' }}</button>
+        </div>
+
+        <form class="edit" *ngIf="editing?._id === b._id" [formGroup]="editForm" (submit)="$event.preventDefault(); save()">
+          <p class="msg msg--error" role="alert" *ngIf="editError">{{ editError }}</p>
+          <div class="two">
+            <div class="field">
+              <label class="field__label" [for]="'st' + b._id">Status</label>
+              <select [id]="'st' + b._id" class="input" formControlName="status">
+                <option value="pending">Pending</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field__label" [for]="'pl' + b._id">Plan</label>
+              <select [id]="'pl' + b._id" class="input" formControlName="plan">
+                <option value="free">Free</option>
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" *ngIf="editForm.controls.status.value === 'suspended'">
+            <label class="field__label" [for]="'rs' + b._id">Reason for suspending</label>
+            <input [id]="'rs' + b._id" class="input" type="text" maxlength="300" formControlName="reason" />
+          </div>
+          <div class="field">
+            <label class="field__label" [for]="'ex' + b._id">Plan ends on</label>
+            <div class="inline">
+              <input [id]="'ex' + b._id" class="input" type="date" formControlName="expires" />
+              <button type="button" class="chip" (click)="plus30()">+30 days</button>
+            </div>
+            <p class="hint">Lagos time, end of day. Leave empty for no end date. Changing a plan here does not charge the owner.</p>
+          </div>
+          <button type="submit" class="btn btn--primary btn--sm" [disabled]="saving">{{ saving ? 'Saving' : 'Save changes' }}</button>
+        </form>
+      </li>
+    </ul>
+
+    <div class="skeleton" *ngIf="loading" aria-busy="true" aria-label="Loading"><span></span><span></span></div>
+    <p class="empty" *ngIf="!loading && !error && !rows.length">No businesses match.</p>
+    <div class="more" *ngIf="!loading && more"><button type="button" class="btn btn--dark" (click)="loadMore()">Load more</button></div>
+  </div>
+</main>

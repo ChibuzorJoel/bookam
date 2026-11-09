@@ -1,0 +1,322 @@
+<!-- Reusable check icon -->
+<ng-template #check>
+  <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+    <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+</ng-template>
+
+
+
+<main id="main" tabindex="-1">
+  <!-- ============================== HERO ============================== -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero__grid">
+      <div class="hero__copy">
+        <h1 id="hero-title">Let customers book and pay from one link</h1>
+        <p class="hero__lead">
+          Create a booking page or online shop for your Lagos business in minutes. Share it on Instagram and WhatsApp,
+          collect deposits with Paystack and get orders straight to your phone.
+        </p>
+
+        <form class="claim" (submit)="claim($event)" novalidate>
+          <label class="sr-only" for="slug">Choose your page name</label>
+          <div class="claim__field" [class.claim__field--error]="claimError">
+            <span class="claim__prefix" aria-hidden="true">{{ domain }}/</span>
+            <input
+              id="slug"
+              name="slug"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="30"
+              placeholder="your-business"
+              [value]="slug"
+              (input)="onSlugInput($event)"
+              aria-describedby="claim-hint"
+              [attr.aria-invalid]="claimError ? 'true' : null"
+            />
+          </div>
+          <button type="submit" class="btn btn--primary">Create my page</button>
+        </form>
+        <p id="claim-hint" class="claim__hint" [class.is-error]="claimError" aria-live="polite">
+          {{ claimError || 'Free to start. No card needed.' }}
+        </p>
+
+        <ul class="trust">
+          <li><ng-container *ngTemplateOutlet="check"></ng-container> Customers pay by card, transfer or USSD</li>
+          <li><ng-container *ngTemplateOutlet="check"></ng-container> Orders arrive on WhatsApp</li>
+          <li><ng-container *ngTemplateOutlet="check"></ng-container> Works on any phone, no app to install</li>
+        </ul>
+      </div>
+
+      <div class="hero__stage">
+        <div class="stage">
+          <span class="stage__arch" aria-hidden="true"></span>
+          <span class="stage__sun" aria-hidden="true"></span>
+
+          <div class="phone" role="img" [attr.aria-label]="ariaPhoneLabel">
+            <ng-container *ngFor="let b of [active]; trackBy: trackById">
+              <div class="screen" aria-hidden="true">
+                <div class="screen__url">
+                  <svg viewBox="0 0 16 16" width="12" height="12" focusable="false">
+                    <path d="M4.5 7V5.5a3.5 3.5 0 0 1 7 0V7M3.5 7h9v6.5h-9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+                  </svg>
+                  <span>{{ displayUrl }}</span>
+                </div>
+
+                <div class="screen__head" [style.background]="b.accent">
+                  <span class="screen__logo">{{ displayInitials }}</span>
+                  <div class="screen__title">
+                    <strong>{{ displayName }}</strong>
+                    <span>{{ b.tagline }}</span>
+                  </div>
+                </div>
+
+                <p class="screen__place">{{ b.place }}</p>
+
+                <ul class="screen__list">
+                  <li *ngFor="let it of b.items">
+                    <div>
+                      <strong>{{ it.name }}</strong>
+                      <span>{{ it.meta }}</span>
+                    </div>
+                    <em>{{ it.price }}</em>
+                  </li>
+                </ul>
+
+                <div class="screen__slots" *ngIf="b.mode === 'booking'">
+                  <p>Pick a time on Saturday</p>
+                  <div class="slots">
+                    <span
+                      class="slot"
+                      *ngFor="let s of b.slots; let i = index"
+                      [class.slot--taken]="s.taken"
+                      [class.slot--picked]="i === b.picked"
+                      >{{ s.t }}</span
+                    >
+                  </div>
+                </div>
+
+                <div class="screen__cta" [style.background]="b.ctaBg">{{ b.cta }}</div>
+                <p class="screen__powered">Pay securely with Paystack</p>
+              </div>
+            </ng-container>
+          </div>
+
+          <ng-container *ngFor="let b of [active]; trackBy: trackById">
+            <div class="alert alert--a" aria-hidden="true">
+              <span class="alert__icon alert__icon--gold"><ng-container *ngTemplateOutlet="check"></ng-container></span>
+              <div>
+                <strong>{{ b.alerts[0].title }}</strong>
+                <span>{{ b.alerts[0].body }}</span>
+              </div>
+            </div>
+            <div class="alert alert--b" aria-hidden="true">
+              <span class="alert__icon alert__icon--green"><ng-container *ngTemplateOutlet="check"></ng-container></span>
+              <div>
+                <strong>{{ b.alerts[1].title }}</strong>
+                <span>{{ b.alerts[1].body }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <div class="chips" role="group" aria-label="See a sample page for">
+          <button
+            type="button"
+            class="chip"
+            *ngFor="let d of demos; trackBy: trackById"
+            [class.is-active]="d.id === active.id"
+            [attr.aria-pressed]="d.id === active.id"
+            (click)="pick(d)"
+          >
+            {{ d.label }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stripe" aria-hidden="true"></div>
+
+  <!-- ============================== MODES ============================== -->
+  <section class="section" id="modes" aria-labelledby="modes-title">
+    <div class="wrap">
+      <div class="section__head">
+        <h2 id="modes-title">Sell products, take bookings, or do both</h2>
+        <p>Every business gets one public page. Turn on the mode that fits how you work.</p>
+      </div>
+
+      <div class="modes">
+        <article class="mode mode--shop">
+          <h3>Shop mode</h3>
+          <p>
+            Show your products with photos and prices. Customers add to cart and send you a ready-made order on WhatsApp.
+          </p>
+          <ul class="ticks">
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Product grid with photos, prices and stock status</li>
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Pre-filled WhatsApp order with items and total</li>
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Every order saved in your dashboard</li>
+          </ul>
+          <div class="bubble" aria-hidden="true">
+            <p>
+              Hello Mama Tolu Cakes, I would like to order:<br />
+              1 x Red velvet cake, 8 inch (₦18,500)<br />
+              1 x Small chops box (₦12,000)<br />
+              <strong>Total: ₦30,500</strong>
+            </p>
+            <span>Sent from your page</span>
+          </div>
+        </article>
+
+        <article class="mode mode--booking">
+          <h3>Booking mode</h3>
+          <p>
+            List your services with time and price. Customers pick an open slot and pay a deposit, so your time is held
+            for them.
+          </p>
+          <ul class="ticks">
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Only open days and free time slots are shown</li>
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Deposits by card, bank transfer or USSD through Paystack</li>
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Booking code and confirmation by WhatsApp or SMS</li>
+          </ul>
+          <div class="ticket" aria-hidden="true">
+            <div class="ticket__top">
+              <span class="ticket__ok"><ng-container *ngTemplateOutlet="check"></ng-container></span>
+              <strong>Booking confirmed</strong>
+            </div>
+            <dl>
+              <div><dt>Service</dt><dd>Knotless braids</dd></div>
+              <div><dt>When</dt><dd>Saturday, 12:30 pm</dd></div>
+              <div><dt>Deposit paid</dt><dd>₦10,000</dd></div>
+              <div><dt>Booking code</dt><dd>K7Q2XM</dd></div>
+            </dl>
+          </div>
+          <p class="mode__note">Booking and deposits come with the Starter and Pro plans.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== HOW IT WORKS ============================== -->
+  <section class="section section--tint" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section__head">
+        <h2 id="how-title">Live in four steps</h2>
+        <p>You can do all of it from your phone. Most people finish the first three in one sitting.</p>
+      </div>
+
+      <ol class="steps">
+        <li class="step" *ngFor="let s of steps; let i = index">
+          <span class="step__num" aria-hidden="true">{{ i + 1 }}</span>
+          <h3>{{ s.title }}</h3>
+          <p>{{ s.text }}</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ============================== WHO IT'S FOR ============================== -->
+  <section class="section" id="who" aria-labelledby="who-title">
+    <div class="wrap who">
+      <h2 id="who-title">Made for people who run on Instagram and WhatsApp</h2>
+      <p class="statement">
+        Hair stylists, barbers, makeup artists, photographers, tutors and mechanics
+        <mark class="tag">take bookings</mark>. Bakers, fashion designers and sellers of all kinds
+        <mark class="tag">take orders</mark>. If your customers find you on their phones, this page is for you.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================== FEATURES ============================== -->
+  <section class="section section--dark" id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="section__head">
+        <h2 id="features-title">Built for how Lagos shops</h2>
+        <p>Fast pages, familiar payments and the chat app your customers already use every day.</p>
+      </div>
+
+      <ul class="features">
+        <li class="feature" *ngFor="let f of features">
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" focusable="false">
+              <path [attr.d]="f.icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <h3>{{ f.title }}</h3>
+          <p>{{ f.text }}</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================== PRICING ============================== -->
+  <section class="section section--tint" id="pricing" aria-labelledby="pricing-title">
+    <div class="wrap">
+      <div class="section__head">
+        <h2 id="pricing-title">Start free. Upgrade when you’re busy.</h2>
+        <p>Prices are in naira. Paystack’s processing fee applies to online payments.</p>
+      </div>
+
+      <div class="plans">
+        <article class="plan" *ngFor="let p of plans" [class.plan--featured]="p.featured">
+          <span class="plan__flag" *ngIf="p.featured">Most popular</span>
+          <h3>{{ p.name }}</h3>
+          <p class="plan__price">
+            <strong>{{ p.price }}</strong>
+            <span *ngIf="p.id !== 'free'">/month</span>
+          </p>
+          <p class="plan__blurb">{{ p.blurb }}</p>
+          <ul class="ticks">
+            <li *ngFor="let f of p.features"><ng-container *ngTemplateOutlet="check"></ng-container> {{ f }}</li>
+          </ul>
+          <a
+            class="btn"
+            [class.btn--primary]="p.featured"
+            [class.btn--dark]="p.id === 'pro'"
+            [class.btn--outline]="p.id === 'free'"
+            routerLink="/login"
+            [queryParams]="{ mode: 'signup', plan: p.id }"
+            >{{ p.cta }}</a
+          >
+        </article>
+      </div>
+
+      <div class="setup">
+        <div>
+          <h3>Want us to build your page for you?</h3>
+          <p>Our setup service starts from ₦50,000. We add your items, style your page and get you ready to share.</p>
+        </div>
+        <a *ngIf="supportUrl" class="btn btn--dark" [href]="supportUrl" target="_blank" rel="noopener noreferrer"
+          >Ask about setup</a
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== FAQ ============================== -->
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="wrap faq">
+      <h2 id="faq-title">Questions people ask before they start</h2>
+      <div class="faq__list">
+        <details *ngFor="let f of faqs">
+          <summary>{{ f.q }}</summary>
+          <p>{{ f.a }}</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== FINAL CTA ============================== -->
+  <section class="final" aria-labelledby="final-title">
+    <div class="wrap final__inner">
+      <h2 id="final-title">Get your page live today</h2>
+      <p>Pick your link, add your first item or service and share it with your customers.</p>
+      <a class="btn btn--dark btn--lg" routerLink="/login" [queryParams]="signupParams">Create my free page</a>
+      <small>Free plan. No card needed.</small>
+    </div>
+  </section>
+</main>
+

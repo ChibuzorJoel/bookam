@@ -1,0 +1,39 @@
+<a class="skip" href="#main" (click)="skipToMain($event)">Skip to main content</a>
+
+<header class="site-header" [class.is-scrolled]="scrolled">
+  <div class="wrap site-header__bar">
+    <a class="brand" routerLink="/" (click)="closeMenu()" [attr.aria-label]="brand + ' home'">
+      <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <rect width="32" height="32" rx="9" fill="#FFC21A" />
+        <path d="M11 8v12h10" fill="none" stroke="#08302D" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+        <rect x="6" y="24" width="20" height="2.4" rx="1.2" fill="#08302D" />
+      </svg>
+      <span class="brand__name">{{ brand }}</span>
+    </a>
+
+    <nav id="primary-nav" class="nav" [class.is-open]="menuOpen" aria-label="Primary">
+      <a *ngFor="let l of links" [href]="'/#' + l.id" (click)="goTo(l.id, $event)">{{ l.label }}</a>
+
+      <ng-container *ngIf="!loggedIn; else member">
+        <a class="nav__login" routerLink="/login" (click)="closeMenu()">Log in</a>
+        <a class="btn btn--primary btn--sm" routerLink="/login" [queryParams]="signupParams" (click)="closeMenu()">Start free</a>
+      </ng-container>
+
+      <ng-template #member>
+        <a class="btn btn--primary btn--sm" routerLink="/dashboard" (click)="closeMenu()">Go to dashboard</a>
+      </ng-template>
+    </nav>
+
+    <button
+      type="button"
+      class="menu-btn"
+      [class.is-open]="menuOpen"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen"
+      aria-controls="primary-nav"
+      [attr.aria-label]="menuOpen ? 'Close menu' : 'Open menu'"
+    >
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>

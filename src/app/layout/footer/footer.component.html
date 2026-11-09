@@ -1,0 +1,27 @@
+<footer class="footer">
+  <div class="footer__stripe" aria-hidden="true"></div>
+
+  <div class="wrap footer__grid">
+    <div>
+      <a class="brand" routerLink="/" [attr.aria-label]="brand + ' home'">
+        <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect width="32" height="32" rx="9" fill="#FFC21A" />
+          <path d="M11 8v12h10" fill="none" stroke="#08302D" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="6" y="24" width="20" height="2.4" rx="1.2" fill="#08302D" />
+        </svg>
+        <span class="brand__name">{{ brand }}</span>
+      </a>
+      <p class="footer__about">{{ about }}</p>
+    </div>
+
+    <nav class="footer__nav" aria-label="Footer">
+      <a *ngFor="let l of links" [href]="'/#' + l.id" (click)="goTo(l.id, $event)">{{ l.label }}</a>
+      <a routerLink="/login">Log in</a>
+      <a routerLink="/login" [queryParams]="signupParams">Create a page</a>
+    </nav>
+  </div>
+
+  <div class="wrap footer__legal">
+    <small>&copy; {{ year }} {{ brand }}. Made in Lagos.</small>
+  </div>
+</footer>

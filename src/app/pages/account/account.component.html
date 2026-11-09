@@ -1,0 +1,88 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <a class="back" routerLink="/dashboard">&larr; Dashboard</a>
+
+    <header class="top">
+      <h1 class="top__title">Account</h1>
+      <p class="top__lead">Your sign-in details.</p>
+    </header>
+
+    <section class="panel" aria-labelledby="ac-who">
+      <h2 id="ac-who" class="panel__title">Signed in as</h2>
+      <dl class="who">
+        <div><dt>Phone</dt><dd>{{ phoneText || 'Not set' }}</dd></div>
+        <div *ngIf="email"><dt>Email</dt><dd>{{ email }} <span class="badge" [class.badge--ok]="emailVerified">{{ emailVerified ? 'Verified' : 'Not verified' }}</span></dd></div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="ac-email-t">
+      <h2 id="ac-email-t" class="panel__title">{{ emailVerified ? 'Change email' : 'Add or verify your email' }}</h2>
+      <p class="panel__lead">A verified email lets you log in with it and get receipts and reminders there. We send a 6-digit code to check it is yours.</p>
+
+      <p class="msg msg--ok" role="status" *ngIf="emailDone">{{ emailDone }}</p>
+      <p class="msg msg--error" role="alert" *ngIf="emailError">{{ emailError }}</p>
+
+      <form *ngIf="!pendingEmail" [formGroup]="emailForm" (ngSubmit)="sendEmailCode()" novalidate>
+        <div class="field">
+          <label class="field__label" for="ac-email">{{ emailVerified ? 'New email address' : 'Email address' }}</label>
+          <input id="ac-email" class="input" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" formControlName="email" [attr.aria-invalid]="invalid(emailForm.controls.email)" />
+          <p class="field__error" *ngIf="fieldError(emailForm.controls.email, 'Email') as m">{{ m }}</p>
+        </div>
+        <button type="submit" class="btn btn--primary btn--block" [disabled]="emailBusy">{{ emailBusy ? 'Sending' : 'Send code' }}</button>
+      </form>
+
+      <form *ngIf="pendingEmail" [formGroup]="codeForm" (ngSubmit)="confirmEmailCode()" novalidate>
+        <p class="sent">Code sent to <strong>{{ pendingEmail }}</strong>. Check your spam folder if it does not arrive.</p>
+        <div class="field">
+          <label class="field__label" for="ac-code">6-digit code</label>
+          <input id="ac-code" class="input input--code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" formControlName="otp" (input)="onCodeInput($event)" [attr.aria-invalid]="invalid(codeForm.controls.otp)" />
+          <p class="field__error" *ngIf="invalid(codeForm.controls.otp)">Enter the 6 digits from the email.</p>
+        </div>
+        <button type="submit" class="btn btn--primary btn--block" [disabled]="emailBusy">{{ emailBusy ? 'Checking' : 'Verify email' }}</button>
+        <div class="row">
+          <button type="button" class="chip" (click)="sendEmailCode()" [disabled]="emailBusy || resendIn > 0">{{ resendIn > 0 ? 'Resend in ' + resendIn + 's' : 'Send a new code' }}</button>
+          <button type="button" class="chip" (click)="changeEmail()">Use a different email</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="ac-pw">
+      <h2 id="ac-pw" class="panel__title">Change password</h2>
+      <p class="panel__lead">After you change it, every other phone or computer is signed out. This one stays signed in.</p>
+
+      <p class="msg msg--ok" role="status" *ngIf="done">{{ done }}</p>
+      <p class="msg msg--error" role="alert" *ngIf="error">{{ error }}</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label class="field__label" for="ac-current">Current password</label>
+          <input id="ac-current" class="input" [type]="show ? 'text' : 'password'" autocomplete="current-password" formControlName="currentPassword" aria-describedby="ac-current-hint" />
+          <p id="ac-current-hint" class="hint">Leave this empty if you have only ever logged in with a code and never set a password.</p>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="ac-new">New password</label>
+          <input id="ac-new" class="input" [type]="show ? 'text' : 'password'" autocomplete="new-password" formControlName="newPassword" [attr.aria-invalid]="invalid(form.controls.newPassword)" aria-describedby="ac-new-hint" />
+          <p id="ac-new-hint" class="hint">At least 8 characters. A short phrase of a few words is easy to remember and hard to guess.</p>
+          <div class="meter" *ngIf="strength().level as lv" aria-hidden="true">
+            <span [class.on]="lv >= 1" [attr.data-l]="lv"></span><span [class.on]="lv >= 2" [attr.data-l]="lv"></span><span [class.on]="lv >= 3" [attr.data-l]="lv"></span>
+            <em>{{ strength().label }}</em>
+          </div>
+          <p class="field__error" *ngIf="fieldError(form.controls.newPassword, 'New password') as m">{{ m }}</p>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="ac-confirm">Type the new password again</label>
+          <input id="ac-confirm" class="input" [type]="show ? 'text' : 'password'" autocomplete="new-password" formControlName="confirm" [attr.aria-invalid]="mismatch ? 'true' : invalid(form.controls.confirm)" />
+          <p class="field__error" *ngIf="mismatch">The two passwords do not match.</p>
+        </div>
+
+        <label class="check"><input type="checkbox" [checked]="show" (change)="show = !show" /> Show passwords</label>
+
+        <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">{{ busy ? 'Saving' : 'Change password' }}</button>
+      </form>
+
+      <p class="hint hint--mt">Forgot your current password? Log out, then use "Forgot password" on the login page to reset it with a code.</p>
+    </section>
+  </div>
+</main>

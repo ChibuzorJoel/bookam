@@ -1,0 +1,212 @@
+<main id="main" tabindex="-1" class="cat">
+  <div class="wrap">
+    <a class="back" routerLink="/dashboard">&larr; Dashboard</a>
+
+    <header class="top">
+      <div>
+        <h1 class="top__title">Products and services</h1>
+        <p class="top__lead">What customers see on your page.</p>
+      </div>
+      <button type="button" class="btn btn--primary" *ngIf="tab === 'products'" (click)="openProduct()" [disabled]="atLimit">Add product</button>
+      <button type="button" class="btn btn--primary" *ngIf="tab === 'services'" (click)="openService()">Add service</button>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <div class="tabs" role="group" aria-label="Catalog">
+      <button type="button" class="tabs__btn" [class.is-active]="tab === 'products'" [attr.aria-pressed]="tab === 'products'" (click)="setTab('products')">
+        Products <span class="count">{{ products.length }}</span>
+      </button>
+      <button type="button" class="tabs__btn" [class.is-active]="tab === 'services'" [attr.aria-pressed]="tab === 'services'" (click)="setTab('services')">
+        Services <span class="count">{{ services.length }}</span>
+      </button>
+    </div>
+
+    <div class="skeleton" *ngIf="loading" aria-busy="true" aria-label="Loading"><span></span><span></span><span></span></div>
+
+    <div class="notice notice--error" role="alert" *ngIf="error && !loading">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button>
+    </div>
+
+    <ng-container *ngIf="!loading && !error">
+      <!-- ============================== PRODUCTS ============================== -->
+      <section *ngIf="tab === 'products'" aria-label="Products">
+        <p class="limit" *ngIf="productLimit !== null" [class.limit--full]="atLimit">
+          {{ products.length }} of {{ productLimit }} items used on your plan.
+          <ng-container *ngIf="atLimit">Upgrade to add more.</ng-container>
+        </p>
+
+        <div class="empty" *ngIf="!products.length">
+          <p>No products yet. Add your first one with a photo and a price.</p>
+          <button type="button" class="btn btn--dark btn--sm" (click)="openProduct()">Add product</button>
+        </div>
+
+        <ul class="grid" *ngIf="products.length">
+          <li class="card" *ngFor="let p of products; trackBy: trackById" [class.is-hidden]="!p.active">
+            <div class="card__img">
+              <img *ngIf="p.imageUrls.length" [src]="p.imageUrls[0]" [alt]="p.name" loading="lazy" decoding="async" width="300" height="300" />
+              <span class="card__ph" *ngIf="!p.imageUrls.length" aria-hidden="true">{{ p.name.charAt(0) }}</span>
+              <span class="flag flag--hide" *ngIf="!p.active">Hidden</span>
+              <span class="flag flag--out" *ngIf="p.active && !p.inStock">Out of stock</span>
+            </div>
+            <div class="card__body">
+              <h2 class="card__name">{{ p.name }}</h2>
+              <p class="card__meta" *ngIf="p.category">{{ p.category }}</p>
+              <p class="card__price">{{ naira(p.price) }}</p>
+
+              <div class="card__actions">
+                <button type="button" class="chip" (click)="openProduct(p)">Edit</button>
+                <button type="button" class="chip" (click)="toggleStock(p)" [disabled]="busyId === p._id">{{ p.inStock ? 'Mark out of stock' : 'Back in stock' }}</button>
+                <button type="button" class="chip" (click)="toggleVisible(p)" [disabled]="busyId === p._id">{{ p.active ? 'Hide' : 'Show' }}</button>
+                <button type="button" class="chip chip--danger" (click)="deleteProduct(p)" [disabled]="busyId === p._id">Delete</button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ============================== SERVICES ============================== -->
+      <section *ngIf="tab === 'services'" aria-label="Services">
+        <div class="empty" *ngIf="!services.length">
+          <p>No services yet. Add what you offer, with the time it takes and a deposit if you want one.</p>
+          <button type="button" class="btn btn--dark btn--sm" (click)="openService()">Add service</button>
+        </div>
+
+        <ul class="rows" *ngIf="services.length">
+          <li class="row" *ngFor="let s of services; trackBy: trackById" [class.is-hidden]="!s.active">
+            <div class="row__main">
+              <h2 class="card__name">{{ s.name }} <span class="flag flag--hide flag--inline" *ngIf="!s.active">Hidden</span></h2>
+              <p class="card__meta">
+                {{ duration(s.durationMinutes) }}<ng-container *ngIf="s.bufferMinutes">, {{ s.bufferMinutes }} min break after</ng-container>
+              </p>
+              <p class="card__meta" *ngIf="s.depositAmount">Deposit {{ naira(s.depositAmount) }}</p>
+              <div class="card__actions">
+                <button type="button" class="chip" (click)="openService(s)">Edit</button>
+                <button type="button" class="chip" (click)="toggleService(s)" [disabled]="busyId === s._id">{{ s.active ? 'Hide' : 'Show' }}</button>
+                <button type="button" class="chip chip--danger" (click)="deleteService(s)" [disabled]="busyId === s._id">Delete</button>
+              </div>
+            </div>
+            <strong class="row__price">{{ naira(s.price) }}</strong>
+          </li>
+        </ul>
+      </section>
+    </ng-container>
+  </div>
+
+  <!-- ============================== EDITOR SHEET ============================== -->
+  <div class="sheet-wrap" *ngIf="editing">
+    <button type="button" class="sheet-back" aria-label="Close" (click)="closeEditor()" [disabled]="saving"></button>
+
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <div class="sheet__head">
+        <h2 id="sheet-title">
+          {{ editing.id ? 'Edit' : 'Add' }} {{ editing.kind === 'product' ? 'product' : 'service' }}
+        </h2>
+        <button type="button" class="link" (click)="closeEditor()" [disabled]="saving">Close</button>
+      </div>
+
+      <p class="msg msg--error" role="alert" *ngIf="formError">{{ formError }}</p>
+
+      <!-- Product form -->
+      <form *ngIf="editing.kind === 'product'" [formGroup]="productForm" (ngSubmit)="saveProduct()" novalidate>
+        <div class="field">
+          <span class="field__label" id="photos-label">Photos <span class="opt">(up to 6, the first one is the cover)</span></span>
+          <ul class="photos" aria-labelledby="photos-label">
+            <li class="photo" *ngFor="let ph of photos; let i = index">
+              <img [src]="ph.preview" alt="" width="96" height="96" />
+              <button type="button" class="photo__x" (click)="removePhoto(i)" [attr.aria-label]="'Remove photo ' + (i + 1)">×</button>
+              <button type="button" class="photo__cover" *ngIf="i > 0" (click)="makeCover(i)">Make cover</button>
+              <span class="photo__tag" *ngIf="i === 0">Cover</span>
+            </li>
+            <li *ngIf="photos.length < 6">
+              <label class="photo photo--add" [class.is-busy]="photoBusy">
+                <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="onPhotos($event)" [disabled]="photoBusy" />
+                <span>{{ photoBusy ? 'Preparing' : '+ Add' }}</span>
+              </label>
+            </li>
+          </ul>
+          <p class="hint">Photos are shrunk on your phone before upload, so they use little data.</p>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="p-name">Name</label>
+          <input id="p-name" class="input" type="text" maxlength="120" formControlName="name" [attr.aria-invalid]="invalid(productForm.controls.name)" />
+          <p class="field__error" *ngIf="fieldError(productForm.controls.name, 'Name') as m">{{ m }}</p>
+        </div>
+
+        <div class="two">
+          <div class="field">
+            <label class="field__label" for="p-price">Price (₦)</label>
+            <input id="p-price" class="input" type="text" inputmode="decimal" placeholder="18500" formControlName="price" [attr.aria-invalid]="invalid(productForm.controls.price)" />
+            <p class="field__error" *ngIf="money_err(productForm.controls.price, 'Price') as m">{{ m }}</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="p-cat">Category <span class="opt">(optional)</span></label>
+            <input id="p-cat" class="input" type="text" maxlength="60" placeholder="Cakes" formControlName="category" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="p-desc">Description <span class="opt">(optional)</span></label>
+          <textarea id="p-desc" class="input input--area" rows="3" maxlength="2000" formControlName="description"></textarea>
+        </div>
+
+        <div class="checks">
+          <label class="check"><input type="checkbox" formControlName="inStock" /> In stock</label>
+          <label class="check"><input type="checkbox" formControlName="active" /> Show on my page</label>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block" [disabled]="saving || photoBusy">{{ saving ? 'Saving' : 'Save product' }}</button>
+      </form>
+
+      <!-- Service form -->
+      <form *ngIf="editing.kind === 'service'" [formGroup]="serviceForm" (ngSubmit)="saveService()" novalidate>
+        <div class="field">
+          <label class="field__label" for="s-name">Name</label>
+          <input id="s-name" class="input" type="text" maxlength="120" placeholder="Knotless braids" formControlName="name" [attr.aria-invalid]="invalid(serviceForm.controls.name)" />
+          <p class="field__error" *ngIf="fieldError(serviceForm.controls.name, 'Name') as m">{{ m }}</p>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="s-desc">Description <span class="opt">(optional)</span></label>
+          <textarea id="s-desc" class="input input--area" rows="2" maxlength="2000" formControlName="description"></textarea>
+        </div>
+
+        <div class="two">
+          <div class="field">
+            <label class="field__label" for="s-dur">How long (minutes)</label>
+            <input id="s-dur" class="input" type="number" inputmode="numeric" min="5" max="720" step="5" formControlName="durationMinutes" [attr.aria-invalid]="invalid(serviceForm.controls.durationMinutes)" />
+            <p class="field__error" *ngIf="invalid(serviceForm.controls.durationMinutes)">Enter a time between 5 and 720 minutes.</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="s-buf">Break after <span class="opt">(minutes)</span></label>
+            <input id="s-buf" class="input" type="number" inputmode="numeric" min="0" max="240" step="5" formControlName="bufferMinutes" [attr.aria-invalid]="invalid(serviceForm.controls.bufferMinutes)" />
+            <p class="field__error" *ngIf="invalid(serviceForm.controls.bufferMinutes)">Enter 0 to 240 minutes.</p>
+          </div>
+        </div>
+
+        <div class="two">
+          <div class="field">
+            <label class="field__label" for="s-price">Price (₦)</label>
+            <input id="s-price" class="input" type="text" inputmode="decimal" placeholder="35000" formControlName="price" [attr.aria-invalid]="invalid(serviceForm.controls.price)" />
+            <p class="field__error" *ngIf="money_err(serviceForm.controls.price, 'Price') as m">{{ m }}</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="s-dep">Deposit (₦) <span class="opt">(optional)</span></label>
+            <input id="s-dep" class="input" type="text" inputmode="decimal" placeholder="10000" formControlName="depositAmount" [attr.aria-invalid]="invalid(serviceForm.controls.depositAmount) || (depositError ? 'true' : null)" />
+            <p class="field__error" *ngIf="money_err(serviceForm.controls.depositAmount, 'Deposit') as m">{{ m }}</p>
+            <p class="field__error" *ngIf="depositError">The deposit cannot be more than the price.</p>
+          </div>
+        </div>
+        <p class="hint hint--mt">A deposit holds the customer's time and is paid with Paystack. Leave it empty to confirm bookings without payment.</p>
+
+        <div class="checks">
+          <label class="check"><input type="checkbox" formControlName="active" /> Show on my page</label>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block" [disabled]="saving">{{ saving ? 'Saving' : 'Save service' }}</button>
+      </form>
+    </div>
+  </div>
+</main>

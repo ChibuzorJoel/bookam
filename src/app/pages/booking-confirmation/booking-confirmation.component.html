@@ -1,0 +1,65 @@
+<main id="main" tabindex="-1" class="conf">
+  <div class="card" aria-live="polite">
+    <!-- Loading -->
+    <ng-container *ngIf="loading">
+      <div class="spinner" aria-hidden="true"></div>
+      <h1>Checking your booking</h1>
+      <p>One moment.</p>
+    </ng-container>
+
+    <!-- Error -->
+    <ng-container *ngIf="!loading && error">
+      <h1>We could not find that booking</h1>
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark" (click)="retry()">Try again</button>
+      <a class="link" [routerLink]="['/', slug]">Back to the page</a>
+    </ng-container>
+
+    <ng-container *ngIf="!loading && booking">
+      <!-- Waiting for payment -->
+      <ng-container *ngIf="waiting">
+        <div class="spinner" aria-hidden="true"></div>
+        <h1>Confirming your payment</h1>
+        <p>This takes a few seconds. Please do not close this page.</p>
+      </ng-container>
+
+      <!-- Confirmed -->
+      <ng-container *ngIf="isConfirmed">
+        <span class="ok" aria-hidden="true">
+          <svg viewBox="0 0 20 20" width="30" height="30"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </span>
+        <h1>Booking confirmed</h1>
+        <p>See you soon, {{ booking.customerName }}. Take a screenshot of this page.</p>
+
+        <dl class="ticket">
+          <div><dt>Business</dt><dd>{{ booking.business.name }}</dd></div>
+          <div><dt>Service</dt><dd>{{ booking.serviceName }}</dd></div>
+          <div><dt>Day</dt><dd>{{ dateText(booking.startAt) }}</dd></div>
+          <div><dt>Time</dt><dd>{{ timeText(booking.startAt) }}</dd></div>
+          <div *ngIf="booking.depositAmount"><dt>Deposit paid</dt><dd>{{ naira(booking.depositAmount) }}</dd></div>
+          <div *ngIf="booking.price"><dt>Service price</dt><dd>{{ naira(booking.price) }}</dd></div>
+          <div *ngIf="booking.business.address || booking.business.area"><dt>Where</dt><dd>{{ booking.business.address }}<ng-container *ngIf="booking.business.address && booking.business.area">, </ng-container>{{ booking.business.area }}</dd></div>
+          <div class="code"><dt>Booking code</dt><dd>{{ booking.bookingCode }}</dd></div>
+        </dl>
+
+        <a class="btn btn--wa" *ngIf="booking.whatsappLink" [href]="booking.whatsappLink" target="_blank" rel="noopener noreferrer">Message {{ booking.business.name }} on WhatsApp</a>
+        <a class="link" [routerLink]="['/', slug]">Back to {{ booking.business.name }}</a>
+      </ng-container>
+
+      <!-- Cancelled / expired -->
+      <ng-container *ngIf="isCancelled">
+        <h1>This booking was not completed</h1>
+        <p>The payment did not go through in time, so the time slot was released. Your card was not charged unless you got a Paystack receipt.</p>
+        <a class="btn btn--dark" [routerLink]="['/', slug]" [queryParams]="{ tab: 'book' }">Pick a time again</a>
+      </ng-container>
+
+      <!-- Still pending after waiting -->
+      <ng-container *ngIf="stillPending">
+        <h1>We have not received your payment yet</h1>
+        <p>If you paid, it can take a few minutes. Check back with your booking code <strong>{{ booking.bookingCode }}</strong>, or message the business.</p>
+        <button type="button" class="btn btn--dark" (click)="retry()">Check again</button>
+        <a class="btn btn--wa" *ngIf="booking.business.whatsappNumber" [href]="'https://wa.me/' + booking.business.whatsappNumber" target="_blank" rel="noopener noreferrer">Message on WhatsApp</a>
+      </ng-container>
+    </ng-container>
+  </div>
+</main>

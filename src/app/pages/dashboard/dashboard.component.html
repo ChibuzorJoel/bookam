@@ -1,0 +1,167 @@
+<main id="main" tabindex="-1" class="dash">
+  <div class="wrap">
+    <!-- ============================== TOP ============================== -->
+    <header class="top">
+      <div>
+        <p class="top__date">{{ todayLabel }}</p>
+        <h1 class="top__title">{{ greeting }}, {{ businessName }}</h1>
+        <p class="top__meta">
+          <span class="pill">{{ planName }} plan</span>
+          <span class="pill pill--soft" *ngIf="plan">You picked {{ plan === 'pro' ? 'Pro' : 'Starter' }}. Upgrade is coming next.</span>
+        </p>
+      </div>
+      <div class="top__actions">
+        <a class="btn btn--primary" routerLink="/dashboard/catalog">Products and services</a>
+        <a class="btn btn--ghost" routerLink="/dashboard/bookings">Bookings and orders</a>
+        <a class="btn btn--ghost" routerLink="/dashboard/analytics">Analytics</a>
+        <a class="btn btn--ghost" routerLink="/dashboard/settings">Settings</a>
+        <a class="btn btn--ghost" routerLink="/dashboard/account">Account</a>
+        <button type="button" class="btn btn--ghost" (click)="load()" [disabled]="loading">Refresh</button>
+        <button type="button" class="btn btn--dark" (click)="logout()">Log out</button>
+      </div>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <!-- Loading skeleton -->
+    <div *ngIf="loading && !stats" class="skeleton" aria-busy="true" aria-label="Loading your dashboard">
+      <span></span><span></span><span></span><span></span>
+    </div>
+
+    <!-- Error -->
+    <div class="notice notice--error" role="alert" *ngIf="error && !loading">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button>
+    </div>
+
+    <ng-container *ngIf="stats">
+      <!-- ============================== STATS ============================== -->
+      <section class="stats" aria-label="Summary">
+        <article class="stat">
+          <p class="stat__label">Today’s bookings</p>
+          <p class="stat__value">{{ bookings.length }}</p>
+        </article>
+        <article class="stat">
+          <p class="stat__label">Confirmed, next 7 days</p>
+          <p class="stat__value">{{ stats.upcomingConfirmed7d }}</p>
+        </article>
+        <article class="stat" [class.stat--alert]="stats.newOrders > 0">
+          <p class="stat__label">New orders</p>
+          <p class="stat__value">{{ stats.newOrders }}</p>
+          <p class="stat__note">{{ stats.ordersLast7Days }} in the last 7 days</p>
+        </article>
+        <article class="stat">
+          <p class="stat__label">Deposits this month</p>
+          <p class="stat__value">{{ naira(stats.depositsThisMonth) }}</p>
+          <p class="stat__note" *ngIf="stats.awaitingPayment">{{ stats.awaitingPayment }} awaiting payment</p>
+        </article>
+      </section>
+
+      <div class="grid">
+        <div class="col">
+          <!-- ============================== TODAY'S BOOKINGS ============================== -->
+          <section class="panel" aria-labelledby="bk-title">
+            <h2 id="bk-title" class="panel__title">Today’s bookings</h2>
+
+            <p class="empty" *ngIf="!bookings.length">No bookings today. Share your link to get some.</p>
+
+            <ul class="list" *ngIf="bookings.length">
+              <li class="item" *ngFor="let b of bookings; trackBy: trackById">
+                <div class="item__time">
+                  <strong>{{ time(b.startAt) }}</strong>
+                  <span>to {{ time(b.endAt) }}</span>
+                </div>
+
+                <div class="item__main">
+                  <p class="item__name">{{ b.customerName }}</p>
+                  <p class="item__sub">{{ b.serviceName }}</p>
+                  <p class="item__sub" *ngIf="b.depositAmount">
+                    Deposit {{ naira(b.depositAmount) }}, {{ b.paymentStatus === 'paid' ? 'paid' : 'not paid yet' }}
+                  </p>
+                  <p class="item__sub" *ngIf="b.notes">“{{ b.notes }}”</p>
+
+                  <div class="item__actions">
+                    <a class="chip" [href]="chatLink(b.customerPhone)" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                    <button type="button" class="chip" *ngIf="b.status === 'pending'" (click)="actOnBooking(b, 'confirm')" [disabled]="busyId === b._id">Confirm</button>
+                    <button type="button" class="chip" *ngIf="b.status === 'confirmed'" (click)="actOnBooking(b, 'complete')" [disabled]="busyId === b._id">Mark done</button>
+                    <button type="button" class="chip" *ngIf="b.status === 'confirmed'" (click)="actOnBooking(b, 'no_show')" [disabled]="busyId === b._id">No show</button>
+                    <button type="button" class="chip chip--danger" *ngIf="b.status === 'pending' || b.status === 'confirmed'" (click)="actOnBooking(b, 'cancel')" [disabled]="busyId === b._id">Cancel</button>
+                  </div>
+                </div>
+
+                <span class="status" [ngClass]="'status--' + b.status">{{ bookingLabel(b.status) }}</span>
+              </li>
+            </ul>
+          </section>
+
+          <!-- ============================== RECENT ORDERS ============================== -->
+          <section class="panel" aria-labelledby="or-title">
+            <h2 id="or-title" class="panel__title">Recent orders</h2>
+
+            <p class="empty" *ngIf="!orders.length">No orders yet. They will show here when customers send them on WhatsApp.</p>
+
+            <ul class="list" *ngIf="orders.length">
+              <li class="item item--order" *ngFor="let o of orders; trackBy: trackById">
+                <div class="item__main">
+                  <p class="item__name">{{ o.customerName }} <span class="code">{{ o.orderCode }}</span></p>
+                  <p class="item__sub">{{ itemsText(o) }}</p>
+                  <p class="item__sub">{{ when(o.createdAt) }}, {{ time(o.createdAt) }}</p>
+                  <div class="item__actions">
+                    <a class="chip" [href]="chatLink(o.customerPhone)" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                  </div>
+                </div>
+
+                <div class="item__side">
+                  <strong class="item__total">{{ naira(o.total) }}</strong>
+                  <label class="sr-only" [for]="'st-' + o._id">Status of order {{ o.orderCode }}</label>
+                  <select
+                    class="select"
+                    [id]="'st-' + o._id"
+                    [ngClass]="'select--' + o.status"
+                    [disabled]="busyId === o._id"
+                    (change)="setOrderStatus(o, $event)"
+                  >
+                    <option *ngFor="let s of orderStatuses" [value]="s" [selected]="s === o.status">{{ orderLabel(s) }}</option>
+                  </select>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <!-- ============================== SHARE ============================== -->
+        <aside class="col col--side">
+          <section class="panel panel--dark" aria-labelledby="sh-title">
+            <h2 id="sh-title" class="panel__title">Share your page</h2>
+
+            <ng-container *ngIf="share; else noShare">
+              <div class="link-box">
+                <span class="link-box__url">{{ share.url }}</span>
+                <button type="button" class="btn btn--primary btn--sm" (click)="copyLink()">Copy</button>
+              </div>
+
+              <img class="qr" [src]="share.qrDataUrl" width="200" height="200" alt="QR code for your page. Print it for your shop." />
+
+              <div class="share__actions">
+                <a class="btn btn--primary btn--sm" [href]="share.whatsappStatusLink" target="_blank" rel="noopener noreferrer">Share on WhatsApp</a>
+                <a class="btn btn--outline btn--sm" [href]="share.qrDataUrl" [attr.download]="'lagospages-qr.png'">Download QR</a>
+              </div>
+
+              <h3 class="share__sub">Ready-made captions</h3>
+              <ul class="captions">
+                <li *ngFor="let t of share.templates">
+                  <p>{{ t }}</p>
+                  <button type="button" class="link" (click)="copyLink(t)">Copy</button>
+                </li>
+              </ul>
+            </ng-container>
+
+            <ng-template #noShare>
+              <p class="empty empty--dark">{{ shareError || 'Your share link will show here.' }}</p>
+            </ng-template>
+          </section>
+        </aside>
+      </div>
+    </ng-container>
+  </div>
+</main>

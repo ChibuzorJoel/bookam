@@ -1,0 +1,320 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <a class="back" routerLink="/dashboard">&larr; Dashboard</a>
+
+    <header class="top">
+      <h1 class="top__title">Settings</h1>
+      <p class="top__lead">Your page, your hours, how you get paid and your plan.</p>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <div class="skeleton" *ngIf="loading" aria-busy="true" aria-label="Loading"><span></span><span></span></div>
+
+    <div class="notice notice--error" role="alert" *ngIf="error && !loading">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button>
+    </div>
+
+    <ng-container *ngIf="business && !loading">
+      <div class="tabs" role="group" aria-label="Settings sections">
+        <button type="button" class="tabs__btn" *ngFor="let t of tabs" [class.is-active]="tab === t.key" [attr.aria-pressed]="tab === t.key" (click)="setTab(t.key)">{{ t.label }}</button>
+      </div>
+
+      <!-- ============================== PROFILE ============================== -->
+      <section class="panel panel--profile" *ngIf="tab === 'profile'" aria-labelledby="pf-title">
+        <h2 id="pf-title" class="panel__title">Business profile</h2>
+        <p class="msg msg--error" role="alert" *ngIf="profileError">{{ profileError }}</p>
+
+        <!-- Logo -->
+        <div class="logo-row">
+          <span class="logo" aria-hidden="true">
+            <img *ngIf="business.logoUrl" [src]="business.logoUrl" alt="" width="72" height="72" />
+            <ng-container *ngIf="!business.logoUrl">{{ initials }}</ng-container>
+          </span>
+          <div>
+            <label class="btn btn--ghost btn--sm file" [class.is-busy]="logoBusy">
+              <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onLogo($event)" [disabled]="logoBusy" />
+              {{ logoBusy ? 'Uploading' : business.logoUrl ? 'Change logo' : 'Add logo' }}
+            </label>
+            <p class="hint">A square image works best. It is shrunk before upload.</p>
+          </div>
+        </div>
+
+        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" novalidate>
+          <div class="field">
+            <label class="field__label" for="pf-name">Business name</label>
+            <input id="pf-name" class="input" type="text" maxlength="80" autocomplete="organization" formControlName="name" [attr.aria-invalid]="invalid(profileForm.controls.name)" />
+            <p class="field__error" *ngIf="profileErr('name', 'Business name') as m">{{ m }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="pf-slug">Page address</label>
+            <div class="slug">
+              <span class="slug__prefix" aria-hidden="true">{{ domain }}/</span>
+              <input id="pf-slug" class="input input--bare" type="text" maxlength="40" autocapitalize="none" spellcheck="false" formControlName="slug" (input)="onSlugInput($event)" [attr.aria-invalid]="invalid(profileForm.controls.slug)" aria-describedby="pf-slug-hint" />
+            </div>
+            <p id="pf-slug-hint" class="hint">Customers visit <strong>{{ previewUrl }}</strong>. Changing it breaks links you already shared.</p>
+            <p class="field__error" *ngIf="profileErr('slug', 'Page address') as m">{{ m }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="pf-tag">Tagline <span class="opt">(optional)</span></label>
+            <input id="pf-tag" class="input" type="text" maxlength="120" placeholder="Braids, wigs and silk press" formControlName="tagline" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="pf-desc">About you <span class="opt">(optional)</span></label>
+            <textarea id="pf-desc" class="input input--area" rows="3" maxlength="1000" formControlName="description"></textarea>
+          </div>
+
+          <div class="two">
+            <div class="field">
+              <label class="field__label" for="pf-wa">WhatsApp number</label>
+              <input id="pf-wa" class="input" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567" formControlName="whatsappNumber" [attr.aria-invalid]="invalid(profileForm.controls.whatsappNumber)" />
+              <p class="field__error" *ngIf="profileErr('whatsappNumber', 'WhatsApp number') as m">{{ m }}</p>
+            </div>
+            <div class="field">
+              <label class="field__label" for="pf-ig">Instagram <span class="opt">(optional)</span></label>
+              <input id="pf-ig" class="input" type="text" autocapitalize="none" spellcheck="false" placeholder="@yourname" maxlength="60" formControlName="instagram" />
+            </div>
+          </div>
+
+          <div class="two">
+            <div class="field">
+              <label class="field__label" for="pf-addr">Address <span class="opt">(optional)</span></label>
+              <input id="pf-addr" class="input" type="text" maxlength="200" autocomplete="street-address" formControlName="address" />
+            </div>
+            <div class="field">
+              <label class="field__label" for="pf-area">Area <span class="opt">(optional)</span></label>
+              <input id="pf-area" class="input" type="text" maxlength="80" placeholder="Lekki Phase 1" formControlName="area" />
+            </div>
+          </div>
+
+          <fieldset class="field fieldset">
+            <legend class="field__label">What will you do on your page?</legend>
+            <div class="choices">
+              <label class="choice" *ngFor="let m of modes">
+                <input type="radio" formControlName="mode" [value]="m.value" />
+                <span class="choice__box"><strong>{{ m.title }}</strong><small>{{ m.text }}</small></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field fieldset">
+            <legend class="field__label">Page colour</legend>
+            <div class="swatches">
+              <label class="swatch" *ngFor="let t of themes">
+                <input type="radio" formControlName="theme" [value]="t.key" />
+                <span class="swatch__box" [style.background]="t.accent" [style.color]="t.ink"><span class="swatch__tick" aria-hidden="true">&#10003;</span></span>
+                <span class="swatch__name">{{ t.label }}</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field" *ngIf="canCustomDomain">
+            <label class="field__label" for="pf-dom">Your own domain <span class="opt">(Pro)</span></label>
+            <input id="pf-dom" class="input" type="text" autocapitalize="none" spellcheck="false" placeholder="www.mybusiness.com" formControlName="customDomain" />
+            <p class="hint">Point the domain's DNS to LagosPages first, then enter it here.</p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="profileBusy">{{ profileBusy ? 'Saving' : 'Save profile' }}</button>
+        </form>
+      </section>
+
+      <!-- ============================== HOURS ============================== -->
+      <ng-container *ngIf="tab === 'hours'">
+        <section class="panel" aria-labelledby="hr-title">
+          <h2 id="hr-title" class="panel__title">Opening hours</h2>
+          <p class="panel__lead">Customers can only book inside these hours.</p>
+          <p class="msg msg--error" role="alert" *ngIf="hoursError">{{ hoursError }}</p>
+
+          <form (submit)="$event.preventDefault(); saveHours()" novalidate>
+            <ul class="days">
+              <li class="day" *ngFor="let g of hoursGroups; trackBy: trackByIndex" [formGroup]="g" [class.is-bad]="g.touched && g.invalid">
+                <span class="day__name">{{ dayName(g.get('weekday')?.value) }}</span>
+                <label class="check"><input type="checkbox" formControlName="isClosed" /> Closed</label>
+                <div class="day__times" *ngIf="!g.get('isClosed')?.value">
+                  <label class="sr-only" [for]="'o' + g.get('weekday')?.value">Opens</label>
+                  <input class="input input--time" type="time" [id]="'o' + g.get('weekday')?.value" formControlName="openTime" />
+                  <span aria-hidden="true">to</span>
+                  <label class="sr-only" [for]="'c' + g.get('weekday')?.value">Closes</label>
+                  <input class="input input--time" type="time" [id]="'c' + g.get('weekday')?.value" formControlName="closeTime" />
+                </div>
+                <span class="day__closed" *ngIf="g.get('isClosed')?.value">Not open</span>
+                <p class="field__error day__err" *ngIf="g.touched && g.errors?.['range']">Closing time must be after opening time.</p>
+                <p class="field__error day__err" *ngIf="g.touched && g.errors?.['times']">Enter both times.</p>
+              </li>
+            </ul>
+
+            <div class="actions">
+              <button type="button" class="btn btn--ghost btn--sm" (click)="copyMonday()">Copy Monday to other open days</button>
+              <button type="submit" class="btn btn--primary" [disabled]="hoursBusy">{{ hoursBusy ? 'Saving' : 'Save hours' }}</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="bl-title">
+          <h2 id="bl-title" class="panel__title">Days off and blocked times</h2>
+          <p class="panel__lead">Block a holiday, or a few hours on one day. Customers will not be able to book them.</p>
+          <p class="msg msg--error" role="alert" *ngIf="blockError">{{ blockError }}</p>
+
+          <form [formGroup]="blockForm" (ngSubmit)="addBlocked()" novalidate>
+            <div class="two">
+              <div class="field">
+                <label class="field__label" for="bl-date">Date</label>
+                <input id="bl-date" class="input" type="date" [min]="todayLagos" formControlName="date" [attr.aria-invalid]="invalid(blockForm.controls.date)" />
+                <p class="field__error" *ngIf="fieldError(blockForm.controls.date, 'Date') as m">{{ m }}</p>
+              </div>
+              <div class="field">
+                <label class="field__label" for="bl-reason">Reason <span class="opt">(optional)</span></label>
+                <input id="bl-reason" class="input" type="text" maxlength="200" placeholder="Public holiday" formControlName="reason" />
+              </div>
+            </div>
+
+            <label class="check"><input type="checkbox" formControlName="allDay" /> Block the whole day</label>
+
+            <div class="two" *ngIf="!blockForm.controls.allDay.value">
+              <div class="field">
+                <label class="field__label" for="bl-start">From</label>
+                <input id="bl-start" class="input" type="time" formControlName="startTime" />
+              </div>
+              <div class="field">
+                <label class="field__label" for="bl-end">Until</label>
+                <input id="bl-end" class="input" type="time" formControlName="endTime" />
+              </div>
+              <p class="field__error" *ngIf="blockForm.touched && blockForm.errors?.['times']">Enter both times.</p>
+              <p class="field__error" *ngIf="blockForm.touched && blockForm.errors?.['range']">The end time must be after the start time.</p>
+            </div>
+
+            <button type="submit" class="btn btn--dark btn--sm" [disabled]="blockBusy">{{ blockBusy ? 'Blocking' : 'Block this time' }}</button>
+          </form>
+
+          <p class="empty" *ngIf="!blocked.length">No blocked dates.</p>
+          <ul class="blocked" *ngIf="blocked.length">
+            <li *ngFor="let b of blocked" [class.is-past]="b.date < todayLagos">
+              <div>
+                <strong>{{ longDate(b.date) }}</strong>
+                <span>{{ b.startTime ? clock(b.startTime) + ' to ' + clock(b.endTime) : 'Whole day' }}<ng-container *ngIf="b.reason">, {{ b.reason }}</ng-container></span>
+              </div>
+              <button type="button" class="chip chip--danger" (click)="removeBlocked(b)">Remove</button>
+            </li>
+          </ul>
+        </section>
+      </ng-container>
+
+      <!-- ============================== PAYMENTS ============================== -->
+      <section class="panel" *ngIf="tab === 'payments'" aria-labelledby="pay-title">
+        <h2 id="pay-title" class="panel__title">Payouts</h2>
+        <p class="panel__lead">Deposits go straight from the customer to your bank account through Paystack. LagosPages never holds your money.</p>
+
+        <div class="skeleton skeleton--sm" *ngIf="paymentsLoading" aria-busy="true"><span></span></div>
+        <div class="notice notice--error" role="alert" *ngIf="paymentsError">
+          <p>{{ paymentsError }}</p>
+        </div>
+
+        <ng-container *ngIf="overview">
+          <div class="bank bank--ok" *ngIf="overview.payoutsEnabled && overview.bank">
+            <span class="bank__tick" aria-hidden="true">&#10003;</span>
+            <div>
+              <strong>{{ overview.bank.accountName }}</strong>
+              <span>{{ overview.bank.bankName }}, account ending {{ overview.bank.accountLast4 }}</span>
+            </div>
+          </div>
+          <div class="bank bank--warn" *ngIf="!overview.payoutsEnabled">
+            <div>
+              <strong>Add your bank account to take deposits</strong>
+              <span>Until then, services with a deposit cannot be booked online.</span>
+            </div>
+          </div>
+
+          <p class="msg msg--error" role="alert" *ngIf="bankError">{{ bankError }}</p>
+
+          <form [formGroup]="bankForm" (ngSubmit)="saveBank()" novalidate>
+            <h3 class="sub">{{ overview.payoutsEnabled ? 'Change bank account' : 'Add bank account' }}</h3>
+            <div class="field">
+              <label class="field__label" for="bk-bank">Bank</label>
+              <select id="bk-bank" class="input" formControlName="bankCode" [attr.aria-invalid]="invalid(bankForm.controls.bankCode)">
+                <option value="">{{ banksLoading ? 'Loading banks' : 'Choose your bank' }}</option>
+                <option *ngFor="let b of banks" [value]="b.code">{{ b.name }}</option>
+              </select>
+              <p class="field__error" *ngIf="invalid(bankForm.controls.bankCode)">Choose your bank.</p>
+            </div>
+            <div class="field">
+              <label class="field__label" for="bk-acc">Account number</label>
+              <input id="bk-acc" class="input" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="0123456789" formControlName="accountNumber" (input)="onAccountInput($event)" [attr.aria-invalid]="invalid(bankForm.controls.accountNumber)" />
+              <p class="field__error" *ngIf="invalid(bankForm.controls.accountNumber)">Account numbers have 10 digits.</p>
+              <p class="hint">We check the account name with Paystack. We never store the full number.</p>
+            </div>
+            <button type="submit" class="btn btn--primary btn--block" [disabled]="bankBusy">{{ bankBusy ? 'Checking account' : 'Save bank account' }}</button>
+          </form>
+
+          <h3 class="sub sub--gap">Deposits received</h3>
+          <div class="totals">
+            <div><span>Total paid in</span><strong>{{ naira(overview.totals.gross) }}</strong></div>
+            <div><span>Paystack fees</span><strong>{{ naira(overview.totals.fees) }}</strong></div>
+            <div><span>Payments</span><strong>{{ overview.totals.count }}</strong></div>
+          </div>
+
+          <p class="empty" *ngIf="!overview.payments.length">No deposits yet.</p>
+          <ul class="blocked" *ngIf="overview.payments.length">
+            <li *ngFor="let p of overview.payments">
+              <div>
+                <strong>{{ p.bookingId?.customerName || 'Deposit' }}</strong>
+                <span>{{ p.bookingId?.serviceName }}<ng-container *ngIf="p.bookingId?.serviceName">, </ng-container>{{ dateText(p.paidAt || p.createdAt) }}</span>
+              </div>
+              <span class="pay">
+                <strong>{{ naira(p.amount) }}</strong>
+                <span class="status" [class.status--ok]="p.status === 'success'">{{ p.status === 'success' ? 'Paid' : p.status }}</span>
+              </span>
+            </li>
+          </ul>
+        </ng-container>
+      </section>
+
+      <!-- ============================== PLAN ============================== -->
+      <section class="panel" *ngIf="tab === 'plan'" aria-labelledby="pl-title">
+        <h2 id="pl-title" class="panel__title">Your plan</h2>
+
+        <div class="skeleton skeleton--sm" *ngIf="billingLoading && !billing" aria-busy="true"><span></span></div>
+        <p class="msg msg--ok" role="status" *ngIf="confirming">Confirming your payment. This takes a few seconds.</p>
+        <p class="msg msg--error" role="alert" *ngIf="billingError">{{ billingError }}</p>
+
+        <ng-container *ngIf="billing">
+          <p class="panel__lead">
+            You are on the <strong>{{ currentPlan }}</strong> plan.
+            <ng-container *ngIf="billing.planExpiresAt && billing.plan !== 'free'">It runs until {{ dateText(billing.planExpiresAt) }}.</ng-container>
+          </p>
+
+          <div class="plans">
+            <article class="plan" *ngFor="let p of billing.plans" [class.is-current]="isCurrent(p.key)">
+              <h3>{{ p.name }}</h3>
+              <p class="plan__price"><strong>{{ p.priceKobo ? naira(p.priceKobo) : '₦0' }}</strong><span *ngIf="p.priceKobo"> / month</span></p>
+              <ul class="plan__list">
+                <li *ngFor="let f of features(p)">{{ f }}</li>
+              </ul>
+              <span class="plan__now" *ngIf="isCurrent(p.key)">Your current plan</span>
+              <button type="button" class="btn btn--primary btn--block" *ngIf="!isCurrent(p.key) && p.key !== 'free'" [disabled]="!!subscribingTo" (click)="subscribe($any(p.key))">
+                {{ subscribingTo === p.key ? 'Opening Paystack' : (isCurrent('free') || p.key === 'pro' ? 'Choose ' + p.name : 'Switch to ' + p.name) }}
+              </button>
+            </article>
+          </div>
+          <p class="hint">Pay with card, bank transfer or USSD on Paystack. Plans last 30 days and do not renew by themselves. We will remind you before it ends.</p>
+
+          <ng-container *ngIf="billing.history.length">
+            <h3 class="sub sub--gap">Payment history</h3>
+            <ul class="blocked">
+              <li *ngFor="let h of billing.history">
+                <div>
+                  <strong>{{ h.plan | titlecase }} plan</strong>
+                  <span>{{ dateText(h.startedAt) }} to {{ dateText(h.endsAt) }}</span>
+                </div>
+                <strong>{{ naira(h.amount) }}</strong>
+              </li>
+            </ul>
+          </ng-container>
+        </ng-container>
+      </section>
+    </ng-container>
+  </div>
+</main>

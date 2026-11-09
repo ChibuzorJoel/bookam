@@ -1,0 +1,81 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <a class="back" routerLink="/dashboard">&larr; Dashboard</a>
+
+    <header class="top">
+      <h1 class="top__title">Bookings and orders</h1>
+      <p class="top__lead">Everything customers have booked or ordered, newest first.</p>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <div class="tabs" role="group" aria-label="Show">
+      <button type="button" class="tabs__btn" *ngFor="let t of tabs" [class.is-active]="tab === t.key" [attr.aria-pressed]="tab === t.key" (click)="setTab(t.key)">{{ t.label }}</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters" role="group" aria-label="Filter by status" *ngIf="tab === 'bookings'">
+      <button type="button" class="chip" *ngFor="let f of bookingFilters" [class.is-on]="bookingFilter === f.value" [attr.aria-pressed]="bookingFilter === f.value" (click)="filterBookings(f.value)">{{ f.label }}</button>
+    </div>
+    <div class="filters" role="group" aria-label="Filter by status" *ngIf="tab === 'orders'">
+      <button type="button" class="chip" *ngFor="let f of orderFilters" [class.is-on]="orderFilter === f.value" [attr.aria-pressed]="orderFilter === f.value" (click)="filterOrders(f.value)">{{ f.label }}</button>
+    </div>
+
+    <div class="notice notice--error" role="alert" *ngIf="error">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="more()">Try again</button>
+    </div>
+
+    <!-- Bookings -->
+    <ul class="list" *ngIf="tab === 'bookings'">
+      <li class="rec" *ngFor="let b of bookings; trackBy: trackById">
+        <div class="rec__head">
+          <div>
+            <strong class="rec__name">{{ b.customerName }}</strong>
+            <span class="rec__sub">{{ b.serviceName || 'Booking' }} &middot; {{ b.bookingCode }}</span>
+          </div>
+          <span class="status" [attr.data-s]="b.status">{{ statusText(b.status) }}</span>
+        </div>
+        <p class="rec__line"><strong>{{ when(b.startAt) }}</strong></p>
+        <p class="rec__line rec__muted">
+          {{ naira(b.price) }}<ng-container *ngIf="b.depositAmount"> &middot; deposit {{ naira(b.depositAmount) }} ({{ b.paymentStatus }})</ng-container>
+        </p>
+        <p class="rec__line rec__muted" *ngIf="b.notes">&ldquo;{{ b.notes }}&rdquo;</p>
+        <div class="rec__actions">
+          <a class="chip" [href]="wa(b.customerPhone)" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="chip" [href]="'tel:' + b.customerPhone">Call</a>
+          <button type="button" class="chip" [class.chip--danger]="a.danger" *ngFor="let a of actionsFor(b)" [disabled]="busyId === b._id" (click)="actOnBooking(b, a.action)">{{ a.label }}</button>
+        </div>
+      </li>
+    </ul>
+
+    <!-- Orders -->
+    <ul class="list" *ngIf="tab === 'orders'">
+      <li class="rec" *ngFor="let o of orders; trackBy: trackById">
+        <div class="rec__head">
+          <div>
+            <strong class="rec__name">{{ o.customerName }}</strong>
+            <span class="rec__sub">{{ o.orderCode }} &middot; {{ day(o.createdAt) }}</span>
+          </div>
+          <span class="status" [attr.data-s]="o.status">{{ statusText(o.status) }}</span>
+        </div>
+        <p class="rec__line">{{ itemsText(o) }}</p>
+        <p class="rec__line"><strong>{{ naira(o.total) }}</strong></p>
+        <div class="rec__actions">
+          <a class="chip" [href]="wa(o.customerPhone)" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="chip" [href]="'tel:' + o.customerPhone">Call</a>
+          <button type="button" class="chip" [class.chip--danger]="n.danger" *ngFor="let n of orderNext(o)" [disabled]="busyId === o._id" (click)="actOnOrder(o, n.status)">{{ n.label }}</button>
+        </div>
+      </li>
+    </ul>
+
+    <div class="skeleton" *ngIf="loading" aria-busy="true" aria-label="Loading"><span></span><span></span></div>
+
+    <p class="empty" *ngIf="!loading && !error && tab === 'bookings' && !bookings.length">No bookings{{ bookingFilter ? ' with this status' : ' yet' }}.</p>
+    <p class="empty" *ngIf="!loading && !error && tab === 'orders' && !orders.length">No orders{{ orderFilter ? ' with this status' : ' yet' }}.</p>
+
+    <div class="more" *ngIf="!loading && ((tab === 'bookings' && bookingsMore) || (tab === 'orders' && ordersMore))">
+      <button type="button" class="btn btn--dark" (click)="more()">Load more</button>
+    </div>
+  </div>
+</main>

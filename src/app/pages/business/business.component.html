@@ -1,0 +1,290 @@
+<ng-template #check>
+  <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+    <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+</ng-template>
+
+<!-- ============================== LOADING ============================== -->
+<main id="main" tabindex="-1" class="page" *ngIf="loading && !business" aria-busy="true">
+  <div class="wrap">
+    <div class="sk sk--hero"></div>
+    <div class="sk-grid"><span class="sk"></span><span class="sk"></span><span class="sk"></span><span class="sk"></span></div>
+  </div>
+</main>
+
+<!-- ============================== NOT FOUND / ERROR ============================== -->
+<main id="main" tabindex="-1" class="page page--center" *ngIf="notFound || (error && !business)">
+  <div class="state">
+    <h1>{{ notFound ? 'We could not find that page' : 'Something went wrong' }}</h1>
+    <p>{{ notFound ? 'The link may be misspelled, or the business has not published its page yet.' : error }}</p>
+    <button type="button" class="btn btn--solid" *ngIf="!notFound" (click)="load()">Try again</button>
+    <a class="btn btn--solid" routerLink="/" *ngIf="notFound">Go to LagosPages</a>
+  </div>
+</main>
+
+<!-- ============================== BUSINESS PAGE ============================== -->
+<div
+  class="biz"
+  *ngIf="business"
+  [style.--accent]="theme.accent"
+  [style.--ink]="theme.ink"
+  [style.--soft]="theme.soft"
+>
+  <header class="hero">
+    <div class="wrap hero__inner">
+      <span class="logo" aria-hidden="true">
+        <img *ngIf="business.logoUrl" [src]="business.logoUrl" alt="" width="84" height="84" />
+        <ng-container *ngIf="!business.logoUrl">{{ initials }}</ng-container>
+      </span>
+      <div class="hero__text">
+        <h1 class="hero__name">{{ business.name }}</h1>
+        <p class="hero__tag" *ngIf="business.tagline">{{ business.tagline }}</p>
+        <p class="hero__loc" *ngIf="location">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+          {{ location }}
+        </p>
+        <div class="hero__links">
+          <a class="pill" *ngIf="whatsappUrl" [href]="whatsappUrl" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          <a class="pill" *ngIf="instagramUrl" [href]="instagramUrl" target="_blank" rel="noopener noreferrer">Instagram</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1" class="page">
+    <div class="wrap">
+      <p class="about" *ngIf="business.description">{{ business.description }}</p>
+
+      <!-- Tabs when the business does both -->
+      <div class="tabs" role="group" aria-label="What would you like to do?" *ngIf="canShop && canBook">
+        <button type="button" class="tabs__btn" [class.is-active]="tab === 'shop'" [attr.aria-pressed]="tab === 'shop'" (click)="setTab('shop')">Shop</button>
+        <button type="button" class="tabs__btn" [class.is-active]="tab === 'book'" [attr.aria-pressed]="tab === 'book'" (click)="setTab('book')">Book a service</button>
+      </div>
+
+      <!-- ============================== SHOP ============================== -->
+      <section *ngIf="canShop && tab === 'shop'" aria-labelledby="shop-title">
+        <h2 id="shop-title" class="title">Products</h2>
+
+        <p class="empty" *ngIf="!products.length">Nothing is listed yet. Message the business on WhatsApp to ask what is available.</p>
+
+        <ul class="products" *ngIf="products.length">
+          <li class="product" *ngFor="let p of products; trackBy: trackById" [class.is-out]="!p.inStock">
+            <div class="product__img">
+              <img *ngIf="p.imageUrls.length" [src]="p.imageUrls[0]" [alt]="p.name" loading="lazy" decoding="async" width="400" height="400" />
+              <span class="product__ph" *ngIf="!p.imageUrls.length" aria-hidden="true">{{ p.name.charAt(0) }}</span>
+              <span class="product__out" *ngIf="!p.inStock">Out of stock</span>
+            </div>
+            <div class="product__body">
+              <h3 class="product__name">{{ p.name }}</h3>
+              <p class="product__desc" *ngIf="p.description">{{ p.description }}</p>
+              <p class="product__price">{{ naira(p.price) }}</p>
+
+              <div class="product__buy">
+                <button type="button" class="btn btn--solid btn--sm" *ngIf="!qtyOf(p)" [disabled]="!p.inStock" (click)="add(p)">Add to cart</button>
+                <div class="stepper" *ngIf="qtyOf(p)" role="group" [attr.aria-label]="'Quantity of ' + p.name">
+                  <button type="button" (click)="remove(p)" aria-label="Remove one">−</button>
+                  <span aria-live="polite">{{ qtyOf(p) }}</span>
+                  <button type="button" (click)="add(p)" aria-label="Add one">+</button>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ============================== BOOKING WIZARD ============================== -->
+      <section *ngIf="canBook && tab === 'book'" id="wizard" class="wizard" aria-labelledby="book-title">
+        <h2 id="book-title" class="title">Book a service</h2>
+
+        <p class="empty" *ngIf="!services.length">No services are listed yet. Message the business on WhatsApp to book.</p>
+
+        <ng-container *ngIf="services.length">
+          <ol class="steps" aria-label="Booking steps">
+            <li [class.is-on]="bookStep >= 1" [attr.aria-current]="bookStep === 1 ? 'step' : null">Service</li>
+            <li [class.is-on]="bookStep >= 2" [attr.aria-current]="bookStep === 2 ? 'step' : null">Time</li>
+            <li [class.is-on]="bookStep >= 3" [attr.aria-current]="bookStep === 3 ? 'step' : null">Your details</li>
+          </ol>
+
+          <p class="msg msg--error" role="alert" *ngIf="bookError">{{ bookError }}</p>
+
+          <!-- Step 1: service -->
+          <ul class="services" *ngIf="bookStep === 1">
+            <li *ngFor="let s of services; trackBy: trackById">
+              <button type="button" class="service" (click)="chooseService(s)" [disabled]="needsPayoutSetup(s)">
+                <span class="service__main">
+                  <strong>{{ s.name }}</strong>
+                  <span class="service__meta">{{ duration(s.durationMinutes) }}<ng-container *ngIf="s.depositAmount">, {{ naira(s.depositAmount) }} deposit</ng-container></span>
+                  <span class="service__desc" *ngIf="s.description">{{ s.description }}</span>
+                  <span class="service__warn" *ngIf="needsPayoutSetup(s)">Online booking is not ready for this service. Message the business on WhatsApp.</span>
+                </span>
+                <span class="service__price">{{ naira(s.price) }}</span>
+              </button>
+            </li>
+          </ul>
+
+          <!-- Step 2: date and time -->
+          <div *ngIf="bookStep === 2 && selectedService">
+            <p class="chosen">
+              <strong>{{ selectedService.name }}</strong>, {{ duration(selectedService.durationMinutes) }}
+              <button type="button" class="link" (click)="backTo(1)">Change</button>
+            </p>
+
+            <h3 class="sub" id="date-label">Pick a day</h3>
+            <div class="days" role="group" aria-labelledby="date-label">
+              <button
+                type="button"
+                class="day"
+                *ngFor="let d of days; trackBy: trackByDate"
+                [class.is-picked]="d.date === selectedDate"
+                [disabled]="d.closed"
+                [attr.aria-pressed]="d.date === selectedDate"
+                [attr.aria-label]="longDate(d.date) + (d.closed ? ', closed' : '')"
+                (click)="chooseDate(d)"
+              >
+                <span class="day__wd">{{ d.weekday }}</span>
+                <strong class="day__n">{{ d.day }}</strong>
+                <span class="day__m">{{ d.month }}</span>
+              </button>
+            </div>
+
+            <ng-container *ngIf="selectedDate">
+              <h3 class="sub">Pick a time on {{ longDate(selectedDate) }}</h3>
+              <p class="hint" *ngIf="slotsLoading" role="status">Checking open times</p>
+              <p class="msg msg--error" role="alert" *ngIf="slotsError">{{ slotsError }}</p>
+              <p class="empty" *ngIf="!slotsLoading && !slotsError && !slots.length">No open times that day. Try another day.</p>
+              <div class="slots" *ngIf="slots.length" role="group" aria-label="Open times">
+                <button type="button" class="slot" *ngFor="let t of slots" [class.is-picked]="t === selectedTime" [attr.aria-pressed]="t === selectedTime" (click)="chooseTime(t)">{{ clock(t) }}</button>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Step 3: details -->
+          <form *ngIf="bookStep === 3 && selectedService" [formGroup]="bookForm" (ngSubmit)="submitBooking()" novalidate>
+            <div class="summary">
+              <p><strong>{{ selectedService.name }}</strong></p>
+              <p>{{ longDate(selectedDate) }}, {{ clock(selectedTime) }}</p>
+              <p>
+                Price {{ naira(selectedService.price) }}
+                <ng-container *ngIf="selectedService.depositAmount">
+                  <br />Pay a <strong>{{ naira(selectedService.depositAmount) }}</strong> deposit now to hold your time. Pay the rest at the appointment.
+                </ng-container>
+              </p>
+              <button type="button" class="link" (click)="backTo(2)">Change time</button>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="b-name">Your name</label>
+              <input id="b-name" class="input" type="text" autocomplete="name" maxlength="80" formControlName="customerName" [attr.aria-invalid]="invalid(bookForm.controls.customerName)" />
+              <p class="field__error" *ngIf="fieldError(bookForm.controls.customerName, 'Your name') as m">{{ m }}</p>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="b-phone">Phone number</label>
+              <input id="b-phone" class="input" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567" formControlName="customerPhone" [attr.aria-invalid]="invalid(bookForm.controls.customerPhone)" />
+              <p class="field__error" *ngIf="fieldError(bookForm.controls.customerPhone, 'Phone number') as m">{{ m }}</p>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="b-email">Email <span class="opt">(optional, for your receipt)</span></label>
+              <input id="b-email" class="input" type="email" inputmode="email" autocomplete="email" autocapitalize="none" formControlName="customerEmail" [attr.aria-invalid]="invalid(bookForm.controls.customerEmail)" />
+              <p class="field__error" *ngIf="fieldError(bookForm.controls.customerEmail, 'Email') as m">{{ m }}</p>
+            </div>
+
+            <div class="field">
+              <label class="field__label" for="b-notes">Note <span class="opt">(optional)</span></label>
+              <textarea id="b-notes" class="input input--area" rows="2" maxlength="500" formControlName="notes"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn--accent btn--block" [disabled]="bookBusy">
+              <ng-container *ngIf="!bookBusy">{{ selectedService.depositAmount ? 'Pay ' + naira(selectedService.depositAmount) + ' deposit and book' : 'Confirm booking' }}</ng-container>
+              <ng-container *ngIf="bookBusy">Please wait</ng-container>
+            </button>
+            <p class="secure" *ngIf="selectedService.depositAmount">Pay securely with Paystack. Card, bank transfer or USSD.</p>
+          </form>
+        </ng-container>
+      </section>
+
+      <!-- ============================== HOURS ============================== -->
+      <section class="hours" aria-labelledby="hours-title">
+        <h2 id="hours-title" class="title title--sm">Opening hours</h2>
+        <dl class="hours__list">
+          <div *ngFor="let r of hoursRows" [class.is-closed]="r.closed">
+            <dt>{{ r.day }}</dt>
+            <dd>{{ r.text }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <footer class="foot">
+        <a *ngIf="business.showBadge" class="foot__badge" routerLink="/">Powered by LagosPages. Get your own page free</a>
+      </footer>
+    </div>
+  </main>
+
+  <!-- Floating cart bar -->
+  <div class="cartbar" *ngIf="canShop && tab === 'shop' && cartCount > 0 && !cartOpen">
+    <button type="button" class="btn btn--accent btn--block" (click)="openCart()">
+      View cart ({{ cartCount }}) <span class="cartbar__sum">{{ naira(cartTotal) }}</span>
+    </button>
+  </div>
+
+  <!-- ============================== CART SHEET ============================== -->
+  <div class="sheet-wrap" *ngIf="cartOpen || orderDone">
+    <button type="button" class="sheet-back" aria-label="Close cart" (click)="orderDone ? finishOrder() : closeCart()"></button>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+      <!-- Order sent -->
+      <ng-container *ngIf="orderDone; else cartBody">
+        <h2 id="cart-title" class="title title--sm">Order saved</h2>
+        <p class="done__code">Order {{ orderDone.order.orderCode }}, total {{ naira(orderDone.order.total) }}</p>
+        <p>One more step: send it to {{ business.name }} on WhatsApp so they can confirm it.</p>
+        <a class="btn btn--wa btn--block" [href]="orderDone.whatsappLink" target="_blank" rel="noopener noreferrer">Send order on WhatsApp</a>
+        <button type="button" class="link link--center" (click)="finishOrder()">Close</button>
+      </ng-container>
+
+      <ng-template #cartBody>
+        <div class="sheet__head">
+          <h2 id="cart-title" class="title title--sm">Your cart</h2>
+          <button type="button" class="link" (click)="closeCart()">Close</button>
+        </div>
+
+        <ul class="lines">
+          <li *ngFor="let l of cart">
+            <div class="lines__name">
+              <strong>{{ l.product.name }}</strong>
+              <span>{{ naira(l.product.price) }} each</span>
+            </div>
+            <div class="stepper stepper--sm" role="group" [attr.aria-label]="'Quantity of ' + l.product.name">
+              <button type="button" (click)="remove(l.product)" aria-label="Remove one">−</button>
+              <span>{{ l.qty }}</span>
+              <button type="button" (click)="add(l.product)" aria-label="Add one">+</button>
+            </div>
+            <strong class="lines__sum">{{ naira(l.qty * l.product.price) }}</strong>
+          </li>
+        </ul>
+        <p class="total"><span>Total</span><strong>{{ naira(cartTotal) }}</strong></p>
+
+        <form [formGroup]="checkoutForm" (ngSubmit)="sendOrder()" novalidate>
+          <p class="msg msg--error" role="alert" *ngIf="orderError">{{ orderError }}</p>
+
+          <div class="field">
+            <label class="field__label" for="o-name">Your name</label>
+            <input id="o-name" class="input" type="text" autocomplete="name" maxlength="80" formControlName="customerName" [attr.aria-invalid]="invalid(checkoutForm.controls.customerName)" />
+            <p class="field__error" *ngIf="fieldError(checkoutForm.controls.customerName, 'Your name') as m">{{ m }}</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="o-phone">Phone number</label>
+            <input id="o-phone" class="input" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567" formControlName="customerPhone" [attr.aria-invalid]="invalid(checkoutForm.controls.customerPhone)" />
+            <p class="field__error" *ngIf="fieldError(checkoutForm.controls.customerPhone, 'Phone number') as m">{{ m }}</p>
+          </div>
+          <div class="field">
+            <label class="field__label" for="o-note">Note <span class="opt">(optional)</span></label>
+            <textarea id="o-note" class="input input--area" rows="2" maxlength="500" placeholder="Delivery address or anything else" formControlName="note"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn--accent btn--block" [disabled]="orderBusy">{{ orderBusy ? 'Saving your order' : 'Continue to WhatsApp' }}</button>
+          <p class="secure">We save your order, then you send it to the seller on WhatsApp.</p>
+        </form>
+      </ng-template>
+    </div>
+  </div>
+</div>

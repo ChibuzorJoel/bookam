@@ -1,0 +1,383 @@
+<!-- Reusable bits -->
+<ng-template #spinner>
+  <svg class="spin" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="3" />
+    <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+  </svg>
+</ng-template>
+
+<ng-template #check>
+  <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+    <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+</ng-template>
+
+<main id="main" tabindex="-1" class="auth">
+  <div class="wrap auth__grid">
+    <!-- ============================== SIDE PANEL (desktop) ============================== -->
+    <aside class="aside" aria-hidden="true">
+      <span class="aside__sun"></span>
+      <div class="aside__body">
+        <p class="aside__kicker">{{ brand }}</p>
+        <p class="aside__title">One link for bookings, orders and deposits.</p>
+        <ul class="aside__list">
+          <li><ng-container *ngTemplateOutlet="check"></ng-container> Customers pay by card, transfer or USSD</li>
+          <li><ng-container *ngTemplateOutlet="check"></ng-container> Orders arrive on WhatsApp</li>
+          <li><ng-container *ngTemplateOutlet="check"></ng-container> Free to start. No card needed.</li>
+        </ul>
+        <div class="aside__ticket">
+          <strong>Booking confirmed</strong>
+          <span>Knotless braids, Saturday 12:30 pm</span>
+          <em>₦10,000 deposit paid</em>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================== FORM CARD ============================== -->
+    <section class="card" [attr.aria-labelledby]="'auth-title'">
+      <!-- Tabs: log in / create page -->
+      <div class="tabs" role="group" aria-label="Choose an option" *ngIf="isTabView">
+        <button type="button" class="tabs__btn" [class.is-active]="view === 'login'" [attr.aria-pressed]="view === 'login'" (click)="setView('login')">
+          Log in
+        </button>
+        <button type="button" class="tabs__btn" [class.is-active]="view === 'signup'" [attr.aria-pressed]="view === 'signup'" (click)="setView('signup')">
+          Create my page
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <p class="msg msg--ok" role="status" aria-live="polite" *ngIf="notice">{{ notice }}</p>
+      <div class="msg msg--error" role="alert" *ngIf="error">
+        <span>{{ error }}</span>
+        <button type="button" class="link" *ngIf="errorAction === 'login'" (click)="useLoginInstead()">Log in instead</button>
+        <button type="button" class="link" *ngIf="errorAction === 'verify'" (click)="verifyNow()">Verify my number</button>
+      </div>
+
+      <!-- ============================== LOG IN ============================== -->
+      <ng-container *ngIf="view === 'login'">
+        <h1 id="auth-title" class="card__title">Welcome back</h1>
+        <p class="card__lead">Log in to see today’s bookings and orders.</p>
+
+        <div class="seg" role="group" aria-label="Log in with">
+          <button type="button" class="seg__btn" [class.is-active]="method === 'password'" [attr.aria-pressed]="method === 'password'" (click)="setMethod('password')">
+            Password
+          </button>
+          <button type="button" class="seg__btn" [class.is-active]="method === 'sms'" [attr.aria-pressed]="method === 'sms'" (click)="setMethod('sms')">
+            SMS code
+          </button>
+        </div>
+
+        <!-- Password -->
+        <form *ngIf="method === 'password'" [formGroup]="loginForm" (ngSubmit)="submitLogin()" novalidate>
+          <div class="field">
+            <label class="field__label" for="login-id">Phone number or email</label>
+            <input
+              id="login-id"
+              class="input"
+              type="text"
+              inputmode="email"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              placeholder="0803 123 4567"
+              formControlName="identifier"
+              [attr.aria-invalid]="loginForm.controls.identifier.touched && loginForm.controls.identifier.invalid ? 'true' : null"
+              aria-describedby="login-id-err"
+            />
+            <p id="login-id-err" class="field__error">{{ errorOf(loginForm.controls.identifier, 'Phone number or email') }}</p>
+          </div>
+
+          <div class="field">
+            <div class="field__row">
+              <label class="field__label" for="login-pw">Password</label>
+              <button type="button" class="link" (click)="setView('forgot')">Forgot password?</button>
+            </div>
+            <div class="pw">
+              <input
+                id="login-pw"
+                class="input"
+                [type]="showPassword ? 'text' : 'password'"
+                autocomplete="current-password"
+                formControlName="password"
+                [attr.aria-invalid]="loginForm.controls.password.touched && loginForm.controls.password.invalid ? 'true' : null"
+                aria-describedby="login-pw-err"
+              />
+              <button type="button" class="pw__toggle" (click)="togglePassword()" [attr.aria-pressed]="showPassword" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <p id="login-pw-err" class="field__error">{{ errorOf(loginForm.controls.password, 'Password') }}</p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">
+            <ng-container *ngIf="busy; else loginLabel"><ng-container *ngTemplateOutlet="spinner"></ng-container> Logging in</ng-container>
+            <ng-template #loginLabel>Log in</ng-template>
+          </button>
+        </form>
+
+        <!-- SMS code -->
+        <form *ngIf="method === 'sms'" [formGroup]="smsForm" (ngSubmit)="submitLogin()" novalidate>
+          <div class="field">
+            <label class="field__label" for="sms-phone">Phone number</label>
+            <input
+              id="sms-phone"
+              class="input"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="0803 123 4567"
+              formControlName="phone"
+              [attr.aria-invalid]="smsForm.controls.phone.touched && smsForm.controls.phone.invalid ? 'true' : null"
+              aria-describedby="sms-phone-err"
+            />
+            <p id="sms-phone-hint" class="field__hint" *ngIf="!errorOf(smsForm.controls.phone, 'Phone number')">We will text you a 6-digit code. No password needed.</p>
+            <p id="sms-phone-err" class="field__error">{{ errorOf(smsForm.controls.phone, 'Phone number') }}</p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">
+            <ng-container *ngIf="busy; else smsLabel"><ng-container *ngTemplateOutlet="spinner"></ng-container> Sending code</ng-container>
+            <ng-template #smsLabel>Send me a code</ng-template>
+          </button>
+        </form>
+
+        <p class="switch">New here? <button type="button" class="link" (click)="setView('signup')">Create your free page</button></p>
+      </ng-container>
+
+      <!-- ============================== SIGN UP ============================== -->
+      <ng-container *ngIf="view === 'signup'">
+        <h1 id="auth-title" class="card__title">Create your page</h1>
+        <p class="card__lead">Free to start. You will get a code by SMS to confirm your number.</p>
+
+        <p class="plan-note" *ngIf="plan">
+          <ng-container *ngTemplateOutlet="check"></ng-container>
+          You picked the {{ plan === 'pro' ? 'Pro' : 'Starter' }} plan. You can upgrade from your dashboard once your page is ready.
+        </p>
+
+        <form [formGroup]="signupForm" (ngSubmit)="submitSignup()" novalidate>
+          <div class="field">
+            <label class="field__label" for="su-name">Business name</label>
+            <input
+              id="su-name"
+              class="input"
+              type="text"
+              autocomplete="organization"
+              maxlength="80"
+              placeholder="Zainab Hair Studio"
+              formControlName="businessName"
+              [attr.aria-invalid]="signupForm.controls.businessName.touched && signupForm.controls.businessName.invalid ? 'true' : null"
+              aria-describedby="su-name-err"
+            />
+            <p id="su-name-err" class="field__error">{{ errorOf(signupForm.controls.businessName, 'Business name') }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="su-phone">Phone number</label>
+            <input
+              id="su-phone"
+              class="input"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="0803 123 4567"
+              formControlName="phone"
+              [attr.aria-invalid]="signupForm.controls.phone.touched && signupForm.controls.phone.invalid ? 'true' : null"
+              aria-describedby="su-phone-err"
+            />
+            <p id="su-phone-hint" class="field__hint" *ngIf="!errorOf(signupForm.controls.phone, 'Phone number')">This is also your default WhatsApp number for orders.</p>
+            <p id="su-phone-err" class="field__error">{{ errorOf(signupForm.controls.phone, 'Phone number') }}</p>
+          </div>
+
+          <fieldset class="field fieldset">
+            <legend class="field__label">What will you do on your page?</legend>
+            <div class="choices">
+              <label class="choice" *ngFor="let m of modes">
+                <input type="radio" formControlName="mode" [value]="m.value" />
+                <span class="choice__box">
+                  <strong>{{ m.title }}</strong>
+                  <small>{{ m.text }}</small>
+                </span>
+              </label>
+            </div>
+            <p class="field__hint">Bookings and deposits come with the Starter and Pro plans. You can change this later.</p>
+          </fieldset>
+
+          <div class="field">
+            <label class="field__label" for="su-email">Email <span class="opt">(optional)</span></label>
+            <input
+              id="su-email"
+              class="input"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              autocapitalize="none"
+              spellcheck="false"
+              placeholder="you@example.com"
+              formControlName="email"
+              [attr.aria-invalid]="signupForm.controls.email.touched && signupForm.controls.email.invalid ? 'true' : null"
+              aria-describedby="su-email-err"
+            />
+            <p id="su-email-err" class="field__error">{{ errorOf(signupForm.controls.email, 'Email') }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="su-pw">Password <span class="opt">(optional)</span></label>
+            <div class="pw">
+              <input
+                id="su-pw"
+                class="input"
+                [type]="showPassword ? 'text' : 'password'"
+                autocomplete="new-password"
+                formControlName="password"
+                [attr.aria-invalid]="signupForm.controls.password.touched && signupForm.controls.password.invalid ? 'true' : null"
+                aria-describedby="su-pw-err"
+              />
+              <button type="button" class="pw__toggle" (click)="togglePassword()" [attr.aria-pressed]="showPassword" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <p id="su-pw-hint" class="field__hint" *ngIf="!errorOf(signupForm.controls.password, 'Password')">At least 8 characters. Skip it and log in with an SMS code instead.</p>
+            <p id="su-pw-err" class="field__error">{{ errorOf(signupForm.controls.password, 'Password') }}</p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">
+            <ng-container *ngIf="busy; else signupLabel"><ng-container *ngTemplateOutlet="spinner"></ng-container> Creating your page</ng-container>
+            <ng-template #signupLabel>Create my page</ng-template>
+          </button>
+        </form>
+
+        <p class="switch">Already have a page? <button type="button" class="link" (click)="setView('login')">Log in</button></p>
+      </ng-container>
+
+      <!-- ============================== ENTER CODE ============================== -->
+      <ng-container *ngIf="view === 'verify'">
+        <h1 id="auth-title" class="card__title">Enter your code</h1>
+        <p class="card__lead">
+          We sent a 6-digit code to <strong>{{ maskedPhone }}</strong>. It works for 10 minutes.
+        </p>
+
+        <form [formGroup]="codeForm" (ngSubmit)="submitCode()" novalidate>
+          <div class="field">
+            <label class="field__label" for="code">6-digit code</label>
+            <input
+              id="code"
+              class="input input--code"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              placeholder="000000"
+              formControlName="code"
+              (input)="onDigits($event, codeForm.controls.code)"
+              [attr.aria-invalid]="codeForm.controls.code.touched && codeForm.controls.code.invalid ? 'true' : null"
+              aria-describedby="code-err"
+            />
+            <p id="code-err" class="field__error">{{ errorOf(codeForm.controls.code, 'Code') }}</p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">
+            <ng-container *ngIf="busy; else verifyLabel"><ng-container *ngTemplateOutlet="spinner"></ng-container> Checking</ng-container>
+            <ng-template #verifyLabel>{{ otpPurpose === 'signup' ? 'Confirm and open my dashboard' : 'Log in' }}</ng-template>
+          </button>
+        </form>
+
+        <div class="again">
+          <button type="button" class="link" (click)="resend()" [disabled]="resendIn > 0 || busy">
+            {{ resendIn > 0 ? 'Send a new code in ' + resendIn + 's' : 'Send a new code' }}
+          </button>
+          <button type="button" class="link" (click)="changeNumber()">Use a different number</button>
+        </div>
+      </ng-container>
+
+      <!-- ============================== FORGOT PASSWORD ============================== -->
+      <ng-container *ngIf="view === 'forgot'">
+        <h1 id="auth-title" class="card__title">Reset your password</h1>
+        <p class="card__lead">Enter the phone number on your account and we will text you a code.</p>
+
+        <form [formGroup]="forgotForm" (ngSubmit)="submitForgot()" novalidate>
+          <div class="field">
+            <label class="field__label" for="forgot-phone">Phone number</label>
+            <input
+              id="forgot-phone"
+              class="input"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="0803 123 4567"
+              formControlName="phone"
+              [attr.aria-invalid]="forgotForm.controls.phone.touched && forgotForm.controls.phone.invalid ? 'true' : null"
+              aria-describedby="forgot-phone-err"
+            />
+            <p id="forgot-phone-err" class="field__error">{{ errorOf(forgotForm.controls.phone, 'Phone number') }}</p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">
+            <ng-container *ngIf="busy; else forgotLabel"><ng-container *ngTemplateOutlet="spinner"></ng-container> Sending code</ng-container>
+            <ng-template #forgotLabel>Send reset code</ng-template>
+          </button>
+        </form>
+
+        <p class="switch"><button type="button" class="link" (click)="setView('login')">Back to log in</button></p>
+      </ng-container>
+
+      <!-- ============================== NEW PASSWORD ============================== -->
+      <ng-container *ngIf="view === 'reset'">
+        <h1 id="auth-title" class="card__title">Choose a new password</h1>
+        <p class="card__lead">
+          Enter the code we sent to <strong>{{ maskedPhone }}</strong> and your new password.
+        </p>
+
+        <form [formGroup]="resetForm" (ngSubmit)="submitReset()" novalidate>
+          <div class="field">
+            <label class="field__label" for="reset-code">6-digit code</label>
+            <input
+              id="reset-code"
+              class="input input--code"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              placeholder="000000"
+              formControlName="code"
+              (input)="onDigits($event, resetForm.controls.code)"
+              [attr.aria-invalid]="resetForm.controls.code.touched && resetForm.controls.code.invalid ? 'true' : null"
+              aria-describedby="reset-code-err"
+            />
+            <p id="reset-code-err" class="field__error">{{ errorOf(resetForm.controls.code, 'Code') }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="reset-pw">New password</label>
+            <div class="pw">
+              <input
+                id="reset-pw"
+                class="input"
+                [type]="showPassword ? 'text' : 'password'"
+                autocomplete="new-password"
+                formControlName="newPassword"
+                [attr.aria-invalid]="resetForm.controls.newPassword.touched && resetForm.controls.newPassword.invalid ? 'true' : null"
+                aria-describedby="reset-pw-err"
+              />
+              <button type="button" class="pw__toggle" (click)="togglePassword()" [attr.aria-pressed]="showPassword" [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'">
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <p id="reset-pw-hint" class="field__hint" *ngIf="!errorOf(resetForm.controls.newPassword, 'New password')">At least 8 characters. Other devices will be logged out.</p>
+            <p id="reset-pw-err" class="field__error">{{ errorOf(resetForm.controls.newPassword, 'New password') }}</p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">
+            <ng-container *ngIf="busy; else resetLabel"><ng-container *ngTemplateOutlet="spinner"></ng-container> Saving</ng-container>
+            <ng-template #resetLabel>Save new password</ng-template>
+          </button>
+        </form>
+
+        <div class="again">
+          <button type="button" class="link" (click)="resendReset()" [disabled]="resendIn > 0 || busy">
+            {{ resendIn > 0 ? 'Send a new code in ' + resendIn + 's' : 'Send a new code' }}
+          </button>
+          <button type="button" class="link" (click)="setView('forgot')">Use a different number</button>
+        </div>
+      </ng-container>
+    </section>
+  </div>
+</main>

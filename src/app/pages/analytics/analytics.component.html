@@ -1,0 +1,77 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <a class="back" routerLink="/dashboard">&larr; Dashboard</a>
+
+    <header class="top">
+      <h1 class="top__title">Analytics</h1>
+      <p class="top__lead">The last 30 days, in Lagos time.</p>
+    </header>
+
+    <div class="skeleton" *ngIf="loading" aria-busy="true" aria-label="Loading"><span></span><span></span></div>
+
+    <div class="notice notice--error" role="alert" *ngIf="error">
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button>
+    </div>
+
+    <section class="panel upsell" *ngIf="needsUpgrade">
+      <h2 class="panel__title">Analytics is a Pro feature</h2>
+      <p class="panel__lead">See how many bookings and orders you get each day, which services sell best, and how much you collect in deposits.</p>
+      <a class="btn btn--primary" routerLink="/dashboard/billing">See plans</a>
+    </section>
+
+    <ng-container *ngIf="data && !loading">
+      <div class="tiles">
+        <div class="tile"><span>Bookings</span><strong>{{ totalBookings }}</strong></div>
+        <div class="tile"><span>Orders</span><strong>{{ totalOrders }}</strong></div>
+        <div class="tile"><span>Deposits collected</span><strong>{{ naira(data.deposits.total) }}</strong><small>{{ data.deposits.count }} payments</small></div>
+      </div>
+
+      <section class="panel" aria-labelledby="an-day">
+        <h2 id="an-day" class="panel__title">Per day</h2>
+        <p class="legend"><span class="key key--b"></span> Bookings <span class="key key--o"></span> Orders</p>
+        <div class="chart" role="img" [attr.aria-label]="'Bar chart of bookings and orders per day. ' + totalBookings + ' bookings and ' + totalOrders + ' orders in 30 days.'">
+          <div class="col" *ngFor="let b of bars; trackBy: trackByDate" [title]="b.label + ': ' + b.bookings + ' bookings, ' + b.orders + ' orders'">
+            <span class="bar bar--b" [style.height.%]="b.bookingsPct" [class.is-zero]="!b.bookings"></span>
+            <span class="bar bar--o" [style.height.%]="b.ordersPct" [class.is-zero]="!b.orders"></span>
+          </div>
+        </div>
+        <div class="axis" aria-hidden="true"><span>{{ bars[0].label }}</span><span>{{ bars[bars.length - 1].label }}</span></div>
+
+        <details class="table">
+          <summary>View as a table</summary>
+          <table>
+            <thead><tr><th scope="col">Day</th><th scope="col">Bookings</th><th scope="col">Orders</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let b of bars; trackBy: trackByDate"><th scope="row">{{ b.label }}</th><td>{{ b.bookings }}</td><td>{{ b.orders }}</td></tr>
+            </tbody>
+          </table>
+        </details>
+      </section>
+
+      <div class="two-col">
+        <section class="panel" aria-labelledby="an-status">
+          <h2 id="an-status" class="panel__title">Booking outcomes</h2>
+          <p class="empty" *ngIf="!statuses.length">No bookings yet.</p>
+          <ul class="meter" *ngIf="statuses.length">
+            <li *ngFor="let s of statuses">
+              <div class="meter__row"><span>{{ s.label }}</span><strong>{{ s.count }}</strong></div>
+              <span class="meter__track"><span class="meter__fill" [attr.data-s]="s.key" [style.width.%]="s.pct"></span></span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="panel" aria-labelledby="an-top">
+          <h2 id="an-top" class="panel__title">Top services</h2>
+          <p class="empty" *ngIf="!data.topServices.length">Confirmed and completed bookings will show up here.</p>
+          <ol class="meter" *ngIf="data.topServices.length">
+            <li *ngFor="let s of data.topServices">
+              <div class="meter__row"><span>{{ s.name || 'Service' }}</span><strong>{{ s.count }}</strong></div>
+              <span class="meter__track"><span class="meter__fill" [style.width.%]="(s.count / topMax) * 100"></span></span>
+            </li>
+          </ol>
+        </section>
+      </div>
+    </ng-container>
+  </div>
+</main>
