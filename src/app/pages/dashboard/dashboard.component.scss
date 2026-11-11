@@ -632,8 +632,9 @@ main:focus {
 
 .qr {
   display: block;
-  width: 180px;
-  height: 180px;
+  width: min(180px, 100%);
+  height: auto;
+  aspect-ratio: 1;
   margin: 18px auto;
   padding: 10px;
   border-radius: 20px;

@@ -2,7 +2,7 @@ const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const logger = require('../utils/logger');
 const { Booking, Payment, Subscription } = require('../models');
-const { isValidSignature, handleChargeSuccess } = require('../services/payment.service');
+const { isValidSignature, isValidPayazaSignature, handleChargeSuccess } = require('../services/payment.service');
 
 // POST /payments/webhook/paystack
 // IMPORTANT: this route receives the RAW body (see app.js). The signature is checked against the raw bytes.
@@ -26,6 +26,24 @@ exports.paystackWebhook = asyncHandler(async (req, res) => {
     await handleChargeSuccess(event.data.reference);
   }
   res.status(200).json({ status: 'success' }); // always 200 for events we do not care about
+});
+
+// POST /payments/webhook/payaza  (raw body, see app.js). Signature = base64 HMAC-SHA512 of the raw body.
+// The payload is only a hint: handleChargeSuccess re-checks the payment with Payaza by our own reference.
+exports.payazaWebhook = asyncHandler(async (req, res) => {
+  if (!isValidPayazaSignature(req.body, req.headers['x-payaza-signature'])) {
+    logger.warn('Rejected Payaza webhook with bad signature');
+    return res.status(401).json({ status: 'error', message: 'Invalid signature' });
+  }
+  let event;
+  try {
+    event = JSON.parse(req.body.toString('utf8'));
+  } catch {
+    return res.status(400).json({ status: 'error', message: 'Bad payload' });
+  }
+  const reference = event.merchant_reference || event.data?.merchant_reference || event.transaction_reference;
+  if (reference) await handleChargeSuccess(String(reference)); // idempotent; a 500 makes Payaza retry
+  res.status(200).json({ status: 'success' });
 });
 
 // GET /payments/verify/:reference

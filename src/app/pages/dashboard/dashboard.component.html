@@ -7,7 +7,7 @@
         <h1 class="top__title">{{ greeting }}, {{ businessName }}</h1>
         <p class="top__meta">
           <span class="pill">{{ planName }} plan</span>
-          <span class="pill pill--soft" *ngIf="plan">You picked {{ plan === 'pro' ? 'Pro' : 'Starter' }}. Upgrade is coming next.</span>
+          <a class="pill pill--soft" *ngIf="plan" routerLink="/dashboard/billing" [queryParams]="{ plan: plan }">You picked {{ plan === 'pro' ? 'Pro' : 'Starter' }}. Finish upgrading</a>
         </p>
       </div>
       <div class="top__actions">

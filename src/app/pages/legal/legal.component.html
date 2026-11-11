@@ -1,0 +1,32 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <nav class="tabs" aria-label="Legal documents">
+      <a class="tabs__btn" *ngFor="let t of tabs" [routerLink]="t.path" [class.is-active]="doc.key === t.key" [attr.aria-current]="doc.key === t.key ? 'page' : null">{{ t.label }}</a>
+    </nav>
+
+    <article class="doc">
+      <header class="doc__head">
+        <h1 class="doc__title">{{ doc.title }}</h1>
+        <p class="doc__date">Effective {{ legal.effective }}</p>
+        <p class="doc__lead">{{ doc.lead }}</p>
+      </header>
+
+      <nav class="toc" aria-label="On this page">
+        <h2 class="toc__title">On this page</h2>
+        <ol>
+          <li *ngFor="let s of doc.sections"><a [routerLink]="[]" [fragment]="s.id">{{ s.title }}</a></li>
+        </ol>
+      </nav>
+
+      <section class="sec" *ngFor="let s of doc.sections; let i = index" [id]="s.id" [attr.aria-labelledby]="s.id + '-h'">
+        <h2 [id]="s.id + '-h'" class="sec__title"><span class="sec__no" aria-hidden="true">{{ i + 1 }}.</span> {{ s.title }}</h2>
+        <ng-container *ngFor="let b of s.body">
+          <p *ngIf="!isList(b)">{{ asText(b) }}</p>
+          <ul *ngIf="isList(b)"><li *ngFor="let item of asList(b)">{{ item }}</li></ul>
+        </ng-container>
+      </section>
+
+      <p class="doc__foot">Questions about this page? Email <a [href]="'mailto:' + legal.email">{{ legal.email }}</a>.</p>
+    </article>
+  </div>
+</main>

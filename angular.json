@@ -26,12 +26,18 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "src/favicon.ico",
+              {
+                "glob": "{favicon.svg,favicon.ico,icon-32.png,icon-192.png,icon-512.png,icon-maskable-512.png,apple-touch-icon.png,site.webmanifest,robots.txt,sitemap.xml}",
+                "input": "src",
+                "output": "/"
+              },
               "src/assets",
               "src/_redirects"
             ],
             "styles": [
-              "src/styles.scss"
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
+              "src/styles.scss",
+              "src/polish.scss"
             ],
             "scripts": []
           },
@@ -49,7 +55,15 @@
                   "maximumError": "60kb"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              }
             },
             "development": {
               "buildOptimizer": false,
@@ -94,7 +108,9 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.scss"
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
+              "src/styles.scss",
+              "src/polish.scss"
             ],
             "scripts": []
           }

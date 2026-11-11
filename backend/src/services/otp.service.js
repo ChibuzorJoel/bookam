@@ -29,8 +29,13 @@ async function issueCode(key, purpose) {
   return code;
 }
 
-async function sendOtp(phone, purpose) {
+/** Delivers a login/reset/signup code. Pass { email } to send it to a VERIFIED email address instead of SMS. */
+async function sendOtp(phone, purpose, { email: toEmail } = {}) {
   const code = await issueCode(phone, purpose);
+  if (toEmail) {
+    await email.send({ to: toEmail, subject: messages.emailCodeSubject(), text: messages.emailCode({ code, minutes: OTP_TTL_MINUTES }) });
+    return;
+  }
   await sms.send(phone, messages.otp({ code, minutes: OTP_TTL_MINUTES }));
 }
 

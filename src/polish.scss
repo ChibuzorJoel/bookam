@@ -1,0 +1,148 @@
+/* ==========================================================================
+   LagosPages | polish.scss
+   Global motion + small-screen safety layer. Add to angular.json "styles"
+   AFTER src/styles.scss. Purely additive: it never changes layout or colour.
+   ========================================================================== */
+
+$ease: cubic-bezier(0.22, 1, 0.36, 1);
+$green-800: #08302d;
+$gold-500: #ffc21a;
+
+/* ---------- Base ---------- */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: clip;               /* no sideways scrolling on any phone */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img, svg, video, canvas { max-width: 100%; }
+img { height: auto; }
+input, select, textarea, button { font: inherit; max-width: 100%; }
+
+/* iOS zooms into inputs under 16px. Stop that on phones. */
+@media (max-width: 759px) {
+  input:not([type='checkbox']):not([type='radio']), select, textarea { font-size: 16px; }
+}
+
+::selection { background: $gold-500; color: $green-800; }
+
+:focus-visible {
+  outline: 3px solid $gold-500;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes lp-page-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes lp-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes lp-grow-y {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+@keyframes lp-grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes lp-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes lp-sheen {
+  from { background-position: 160% 0; }
+  to   { background-position: -60% 0; }
+}
+
+/* ---------- Page transition: every routed page eases in ---------- */
+router-outlet + * {
+  animation: lp-page-in 0.5s $ease both;
+}
+
+/* ---------- Staggered reveal for cards, rows and tiles ---------- */
+.panel, .plan, .tile, .rec, .service, .product, .stat, .card, .ticket,
+.swatch, .faq details, .doc, .item, .day, .chip, .notice {
+  animation: lp-rise 0.55s $ease both;
+}
+
+:is(.plans, .list, .stats, .tiles, .services, .products, .set, .two-col, .totals) > * {
+  animation: lp-rise 0.55s $ease both;
+}
+:is(.plans, .list, .stats, .tiles, .services, .products, .set, .two-col, .totals) > :nth-child(1) { animation-delay: 0.04s; }
+:is(.plans, .list, .stats, .tiles, .services, .products, .set, .two-col, .totals) > :nth-child(2) { animation-delay: 0.10s; }
+:is(.plans, .list, .stats, .tiles, .services, .products, .set, .two-col, .totals) > :nth-child(3) { animation-delay: 0.16s; }
+:is(.plans, .list, .stats, .tiles, .services, .products, .set, .two-col, .totals) > :nth-child(4) { animation-delay: 0.22s; }
+:is(.plans, .list, .stats, .tiles, .services, .products, .set, .two-col, .totals) > :nth-child(5) { animation-delay: 0.28s; }
+:is(.plans, .list, .stats, .tiles, .services, .products, .set, .two-col, .totals) > :nth-child(n + 6) { animation-delay: 0.34s; }
+
+/* ---------- Charts and meters draw in ---------- */
+.bar { transform-origin: bottom; animation: lp-grow-y 0.8s $ease both; }
+.col:nth-child(3n) .bar { animation-delay: 0.08s; }
+.col:nth-child(3n + 1) .bar { animation-delay: 0.16s; }
+.meter__fill { transform-origin: left; animation: lp-grow-x 0.9s $ease 0.15s both; }
+
+/* ---------- Success tick pops ---------- */
+.ok { animation: lp-pop 0.6s $ease 0.1s both; }
+
+/* ---------- Touch + hover feedback ---------- */
+.btn, .pill, .tabs__btn, .period__btn, .seg__btn, .chip, .link, .back {
+  transition: transform 0.2s $ease, box-shadow 0.25s ease, background-color 0.25s ease,
+    border-color 0.25s ease, color 0.25s ease, opacity 0.25s ease;
+}
+.btn:active:not([disabled]), .pill:active, .tabs__btn:active, .period__btn:active,
+.seg__btn:active { transform: scale(0.97); }
+
+@media (hover: hover) {
+  .btn:hover:not([disabled]) { box-shadow: 0 10px 24px -10px rgba(8, 48, 45, 0.5); }
+  .plan, .service, .product, .tile, .rec, .swatch {
+    transition: transform 0.3s $ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .plan:hover, .service:hover, .product:hover, .tile:hover, .rec:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 34px -20px rgba(8, 48, 45, 0.45);
+  }
+  .back:hover i { transform: translateX(-3px); }
+}
+.back i { display: inline-block; transition: transform 0.25s $ease; }
+
+/* Skeleton shimmer, a little more alive */
+.skeleton span, .sk {
+  background-image: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: lp-sheen 1.4s linear infinite;
+}
+
+/* Smooth tab/accordion content */
+details[open] > :not(summary) { animation: lp-page-in 0.35s $ease both; }
+
+/* ---------- Very small phones (320 to 359px) ---------- */
+@media (max-width: 359px) {
+  .tabs__btn { font-size: 0.8rem; padding-inline: 4px; }
+  .btn { padding-inline: 14px; }
+  .qr { width: 150px; height: 150px; }
+  .top__title, .hero__name { word-break: break-word; }
+}
+
+/* ---------- Respect people who turn motion off ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

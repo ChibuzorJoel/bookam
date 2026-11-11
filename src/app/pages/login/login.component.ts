@@ -140,6 +140,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       validators: [Validators.minLength(8), Validators.maxLength(100)],
     }),
     mode: new FormControl<BusinessMode>('both', { nonNullable: true }),
+    agree: new FormControl(false, { nonNullable: true, validators: [Validators.requiredTrue] }),
   });
 
   readonly codeForm = new FormGroup({
@@ -161,6 +162,8 @@ export class LoginComponent implements OnInit, OnDestroy {
   private readonly isBrowser: boolean;
   /** The page address typed on the home page. Sent with sign-up; the server uses it only if it is valid and free. */
   private wantedSlug = '';
+  /** Billing period picked on the pricing page, carried through sign-up to the Plan tab. */
+  private period: 'monthly' | 'annual' = 'monthly';
   private routeSub?: Subscription;
   private timer: ReturnType<typeof setInterval> | null = null;
 
@@ -186,6 +189,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.routeSub = this.route.queryParamMap.subscribe((q) => {
       const plan = q.get('plan');
       this.plan = plan && PAID_PLANS.includes(plan) ? (plan as 'starter' | 'pro') : null;
+      this.period = q.get('period') === 'annual' ? 'annual' : 'monthly';
       this.returnUrl = safeReturnUrl(q.get('returnUrl'));
 
       const slug = (q.get('slug') ?? '').toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -373,6 +377,30 @@ export class LoginComponent implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Free fallback when the SMS does not arrive: sends the same code to the account's verified email.
+   * The server answers the same whether or not the account has one, so the message stays careful.
+   */
+  sendByEmail(): void {
+    if (this.resendIn > 0 || this.busy) {
+      return;
+    }
+    const purpose = this.view === 'reset' ? ('reset' as const) : this.otpPurpose;
+    this.call(
+      this.auth.requestOtp(this.otpPhone, purpose, 'email'),
+      (message) => {
+        this.notice = `${message} It can take a minute. Check your spam folder too.`;
+        this.startTimer();
+      },
+      (err) => {
+        if (err.code === 'OTP_COOLDOWN') {
+          this.startTimer();
+        }
+        return false;
+      }
+    );
+  }
+
   /** "Use a different number" on the code screen. */
   changeNumber(): void {
     this.stopTimer();
@@ -485,7 +513,12 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.router.navigate(['/admin']);
       return;
     }
-    this.router.navigate([DASHBOARD_ROUTE], { queryParams: this.plan ? { plan: this.plan } : {} });
+    // Picked a paid plan on the pricing page: go straight to the Plan tab so they can pay.
+    if (this.plan) {
+      this.router.navigate([DASHBOARD_ROUTE, 'billing'], { queryParams: { plan: this.plan, period: this.period } });
+      return;
+    }
+    this.router.navigate([DASHBOARD_ROUTE]);
   }
 
   /**

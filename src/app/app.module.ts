@@ -19,6 +19,7 @@ import { AnalyticsComponent } from './pages/analytics/analytics.component';
 import { AdminComponent } from './pages/admin/admin.component';
 import { AccountComponent } from './pages/account/account.component';
 import { PricingComponent } from './pages/pricing/pricing.component';
+import { LegalComponent } from './pages/legal/legal.component';
 
 @NgModule({
   // Only non-standalone components belong here
@@ -27,6 +28,7 @@ import { PricingComponent } from './pages/pricing/pricing.component';
     HomeComponent,
     HeaderComponent,
     FooterComponent,
+    LegalComponent,
   ],
   imports: [
     BrowserModule,

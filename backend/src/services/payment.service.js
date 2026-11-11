@@ -4,6 +4,8 @@ const logger = require('../utils/logger');
 const AppError = require('../utils/AppError');
 const { Booking, Business, Payment, Subscription } = require('../models');
 const paystack = require('./paystack.service');
+const payaza = require('./payaza.service');
+const { payoutReady } = require('../utils/payout');
 const notifications = require('./notification.service');
 const messages = require('../templates/messages');
 const { generateReference } = require('../utils/ids');
@@ -11,6 +13,34 @@ const { PLAN_DURATION_DAYS } = require('../config/plans');
 
 const siteUrl = () => env.PUBLIC_BASE_URL.replace(/\/$/, '');
 const emailFor = (email, phone) => email || `${phone}@${env.PLACEHOLDER_EMAIL_DOMAIN}`;
+
+const naira = (kobo) => Math.round(kobo) / 100;
+const intlPhone = (phone) => {
+  const d = String(phone || '').replace(/\D/g, '');
+  return d ? `+${d}` : '+2340000000000';
+};
+const splitName = (full) => {
+  const parts = String(full || '').trim().split(/\s+/).filter(Boolean);
+  return { firstName: parts[0] || 'Customer', lastName: parts.slice(1).join(' ') || parts[0] || 'Customer' };
+};
+
+/** Payaza has no "initialise" call: the browser opens its checkout popup with this config, and we verify by reference. */
+function payazaCheckout({ reference, amount, email, name, phone, splitCode, billerName, details }) {
+  return {
+    merchantKey: env.PAYAZA_PUBLIC_KEY, // public by design
+    mode: env.PAYAZA_MODE,
+    reference,
+    amount: naira(amount),
+    currency: 'NGN',
+    email,
+    ...splitName(name),
+    phone: intlPhone(phone),
+    billerName,
+    // One beneficiary gets the whole remainder. Payaza weights splits in tenths, so a single account is always 10.
+    ...(splitCode ? { splitAccounts: [{ code: splitCode, ratio: 10 }] } : {}),
+    additionalDetails: details,
+  };
+}
 
 /** Verifies the x-paystack-signature header (HMAC-SHA512 of the RAW body with your secret key). */
 function isValidSignature(rawBody, signature) {
@@ -27,12 +57,33 @@ function isValidSignature(rawBody, signature) {
  * is kept via transaction_charge.
  */
 async function startBookingPayment({ booking, business }) {
-  if (!business.paystackSubaccountCode) {
+  if (!payoutReady(business)) {
     throw new AppError('This business has not finished setting up payments yet. Please contact them on WhatsApp.', 409, 'PAYOUT_NOT_SET');
   }
   const amount = booking.depositAmount;
   const reference = generateReference('BKG');
   const platformFee = Math.round((amount * env.PLATFORM_FEE_PERCENT) / 100);
+
+  if (env.PAYMENT_PROVIDER === 'payaza') {
+    if (!env.PAYAZA_PUBLIC_KEY) throw new AppError('Payments are not configured on this server.', 503, 'PAYMENTS_DISABLED');
+    await Payment.create({ businessId: business._id, bookingId: booking._id, provider: 'payaza', paystackReference: reference, amount, status: 'pending' });
+    return {
+      provider: 'payaza',
+      authorizationUrl: null,
+      accessCode: null,
+      reference,
+      checkout: payazaCheckout({
+        reference,
+        amount,
+        email: emailFor(booking.customerEmail, booking.customerPhone),
+        name: booking.customerName,
+        phone: booking.customerPhone,
+        splitCode: business.payazaSplitCode,
+        billerName: business.name,
+        details: { type: 'booking_deposit', bookingCode: booking.bookingCode },
+      }),
+    };
+  }
 
   const init = await paystack.initializeTransaction({
     email: emailFor(booking.customerEmail, booking.customerPhone),
@@ -60,22 +111,43 @@ async function startBookingPayment({ booking, business }) {
     status: 'pending',
   });
 
-  return { authorizationUrl: init.authorization_url, accessCode: init.access_code, reference };
+  return { provider: 'paystack', authorizationUrl: init.authorization_url, accessCode: init.access_code, reference };
 }
 
 /** Subscription payment goes to the PLATFORM Paystack account (no subaccount). */
-async function startSubscriptionPayment({ business, plan, amount, email, phone }) {
+async function startSubscriptionPayment({ business, plan, period = 'monthly', durationDays = PLAN_DURATION_DAYS, amount, email, phone }) {
   const reference = generateReference('SUB');
+
+  if (env.PAYMENT_PROVIDER === 'payaza') {
+    if (!env.PAYAZA_PUBLIC_KEY) throw new AppError('Payments are not configured on this server.', 503, 'PAYMENTS_DISABLED');
+    await Subscription.create({ businessId: business._id, plan, period, durationDays, amount, provider: 'payaza', paystackReference: reference, status: 'pending' });
+    return {
+      provider: 'payaza',
+      authorizationUrl: null,
+      accessCode: null,
+      reference,
+      checkout: payazaCheckout({
+        reference,
+        amount,
+        email: emailFor(email, phone),
+        name: business.name,
+        phone,
+        billerName: 'LagosPages',
+        details: { type: 'subscription', plan, period },
+      }),
+    };
+  }
+
   const init = await paystack.initializeTransaction({
     email: emailFor(email, phone),
     amount,
     currency: 'NGN',
     reference,
     callback_url: `${siteUrl()}/dashboard/billing`,
-    metadata: { type: 'subscription', plan, businessId: String(business._id) },
+    metadata: { type: 'subscription', plan, period, businessId: String(business._id) },
   });
-  await Subscription.create({ businessId: business._id, plan, amount, paystackReference: reference, status: 'pending' });
-  return { authorizationUrl: init.authorization_url, accessCode: init.access_code, reference };
+  await Subscription.create({ businessId: business._id, plan, period, durationDays, amount, paystackReference: reference, status: 'pending' });
+  return { provider: 'paystack', authorizationUrl: init.authorization_url, accessCode: init.access_code, reference };
 }
 
 /**
@@ -153,7 +225,7 @@ async function settleSubscription(sub, verified) {
 
   // Renewals extend from the current expiry (if still active) so early renewers do not lose days.
   const base = business.planExpiresAt && business.planExpiresAt > now && business.plan !== 'free' ? business.planExpiresAt : now;
-  const endsAt = new Date(base.getTime() + PLAN_DURATION_DAYS * 24 * 60 * 60 * 1000);
+  const endsAt = new Date(base.getTime() + (sub.durationDays || PLAN_DURATION_DAYS) * 24 * 60 * 60 * 1000);
 
   const claimed = await Subscription.findOneAndUpdate(
     { _id: sub._id, status: { $ne: 'active' } },
@@ -164,29 +236,37 @@ async function settleSubscription(sub, verified) {
 
   business.plan = sub.plan;
   business.planExpiresAt = endsAt;
-  business.renewalReminderFor = undefined; // allow a fresh renewal reminder for the new period
+  business.renewalReminderFor = undefined;
+  business.renewalSent = []; // a new period starts: allow fresh renewal reminders
   await business.save();
   notifications.background(notifications.toOwner(business, 'subscription_activated', 'Your plan is active', messages.subscriptionActivated({ plan: sub.plan, endsAt })));
   return claimed;
 }
 
-/** Entry point for webhook + verify endpoint. Always re-verifies with Paystack; never trusts the payload alone. */
+/**
+ * Entry point for webhooks + the verify endpoint, for either provider. Looks the reference up in OUR records first
+ * (that tells us the provider and the expected amount), then always re-verifies with the provider. Never trusts a
+ * webhook payload or a browser callback on its own.
+ */
 async function handleChargeSuccess(reference) {
-  const verified = await paystack.verifyTransaction(reference);
+  const payment = await Payment.findOne({ paystackReference: reference });
+  const sub = payment ? null : await Subscription.findOne({ paystackReference: reference });
+  const record = payment || sub;
+  if (!record) {
+    logger.warn(`Payment event for unknown reference ${reference}`);
+    return { handled: false, status: 'unknown_reference' };
+  }
+
+  const verified =
+    record.provider === 'payaza' ? await payaza.verifyTransaction(reference, record.amount) : await paystack.verifyTransaction(reference);
   if (verified.status !== 'success') return { handled: false, status: verified.status };
 
-  const payment = await Payment.findOne({ paystackReference: reference });
   if (payment) {
     await settleBookingPayment(payment, verified);
     return { handled: true, kind: 'booking' };
   }
-  const sub = await Subscription.findOne({ paystackReference: reference });
-  if (sub) {
-    await settleSubscription(sub, verified);
-    return { handled: true, kind: 'subscription' };
-  }
-  logger.warn(`charge.success for unknown reference ${reference}`);
-  return { handled: false, status: 'unknown_reference' };
+  await settleSubscription(sub, verified);
+  return { handled: true, kind: 'subscription' };
 }
 
-module.exports = { isValidSignature, startBookingPayment, startSubscriptionPayment, handleChargeSuccess };
+module.exports = { isValidSignature, isValidPayazaSignature: payaza.isValidSignature, startBookingPayment, startSubscriptionPayment, handleChargeSuccess };

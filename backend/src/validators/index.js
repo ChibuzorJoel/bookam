@@ -4,7 +4,7 @@ const { isValidDateStr } = require('../utils/time');
 
 // ---------- primitives ----------
 const phone = z
-  .string({ required_error: 'Phone number is required' })
+  .string({ error: 'Phone number is required' })
   .trim()
   .transform((v) => normalizePhone(v))
   .refine((v) => v !== null, 'Enter a valid Nigerian phone number');
@@ -47,7 +47,12 @@ const changePassword = z.object({
 });
 const emailRequest = z.object({ email });
 const emailVerify = z.object({ email, otp: z.string().regex(/^\d{6}$/, 'The code has 6 digits') });
-const requestOtp = z.object({ phone, purpose: z.enum(['signup', 'login', 'reset']).default('login') });
+const requestOtp = z.object({
+  phone,
+  purpose: z.enum(['signup', 'login', 'reset']).default('login'),
+  // 'email' is only honoured for login/reset on accounts with a verified email. Sign-up always needs the phone.
+  channel: z.enum(['sms', 'email']).default('sms'),
+});
 const verifyOtp = z.object({ phone, otp: z.string().regex(/^\d{6}$/, 'OTP must be 6 digits'), purpose: z.enum(['signup', 'login']).default('signup') });
 const login = z.object({ identifier: z.string().trim().min(3), password: z.string().min(1) });
 const resetPassword = z.object({ phone, otp: z.string().regex(/^\d{6}$/), newPassword: password });
@@ -182,7 +187,7 @@ const orderUpdate = z.object({ status: z.enum(['new', 'contacted', 'completed', 
 const orderListQuery = pagingQuery.extend({ status: z.enum(['new', 'contacted', 'completed', 'cancelled']).optional() });
 
 // ---------- billing / admin ----------
-const subscribe = z.object({ plan: z.enum(['starter', 'pro']) });
+const subscribe = z.object({ plan: z.enum(['starter', 'pro']), period: z.enum(['monthly', 'annual']).default('monthly') });
 
 const adminBusinessList = pagingQuery.extend({
   q: z.string().trim().max(60).optional(),

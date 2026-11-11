@@ -689,7 +689,7 @@ select.input {
 
 .day {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px 12px;
   padding: 10px 14px;
@@ -701,7 +701,7 @@ select.input {
   }
 
   @include up($bp-sm) {
-    grid-template-columns: 110px auto 1fr;
+    grid-template-columns: 110px auto minmax(0, 1fr);
   }
 }
 
@@ -915,6 +915,13 @@ select.input {
   color: $green-600;
 }
 
+
+.period { display: inline-flex; gap: 4px; margin-bottom: 16px; padding: 4px; border-radius: 999px; background: $tint; }
+.period__btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; font-weight: 800; cursor: pointer; color: $green-800; }
+.period__btn.is-active { background: $green-800; color: $white; }
+.period__btn:focus-visible { outline: 3px solid $green-600; outline-offset: 2px; }
+.period__tag { padding: 2px 8px; border-radius: 999px; background: $gold-500; color: $green-800; font-size: 0.72rem; }
+.plan__save { font-size: 0.88rem; font-weight: 800; color: $green-600; }
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

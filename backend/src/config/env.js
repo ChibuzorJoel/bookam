@@ -27,7 +27,11 @@ const schema = z.object({
   BOOKING_HOLD_MINUTES: z.coerce.number().default(10),
   MAX_ADVANCE_BOOKING_DAYS: z.coerce.number().default(60),
 
+  PAYMENT_PROVIDER: z.enum(['paystack', 'payaza']).default('paystack'),
   PAYSTACK_SECRET_KEY: z.string().default(''),
+  PAYAZA_PUBLIC_KEY: z.string().default(''),
+  PAYAZA_SECRET_KEY: z.string().default(''), // verifies webhook signatures
+  PAYAZA_MODE: z.enum(['Live', 'Test']).default('Test'),
   PLATFORM_FEE_PERCENT: z.coerce.number().min(0).max(30).default(0),
 
   SMS_PROVIDER: z.enum(['console', 'termii']).default('console'),

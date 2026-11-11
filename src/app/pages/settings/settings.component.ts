@@ -18,7 +18,8 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { PayazaCheckout } from '../../core/payaza';
 import { Meta, Title } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { catchError, finalize, switchMap } from 'rxjs/operators';
@@ -35,6 +36,7 @@ import {
   OwnerBusiness,
   PaymentsOverview,
   PlanInfo,
+  BillingPeriod,
   SettingsApi,
   ThemeKey,
 } from '../../services/settings.service';
@@ -179,6 +181,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
   billingLoading = false;
   billingError = '';
   subscribingTo: 'starter' | 'pro' | null = null;
+  /** Billing period shown on the Plan tab. Yearly is pay-10-get-12. */
+  period: BillingPeriod = 'monthly';
+  /** The plan they chose before signing up, so we can point at it. */
+  picked: 'starter' | 'pro' | null = null;
   confirming = false;
 
   readonly fieldError = fieldError;
@@ -195,6 +201,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private readonly auth: AuthService,
     private readonly route: ActivatedRoute,
     private readonly cdr: ChangeDetectorRef,
+    private readonly router: Router,
+    private readonly payaza: PayazaCheckout,
     private readonly title: Title,
     private readonly meta: Meta,
     @Inject(DOCUMENT) private readonly doc: Document,
@@ -213,6 +221,12 @@ export class SettingsComponent implements OnInit, OnDestroy {
     if (wanted && this.tabs.some((t) => t.key === wanted)) {
       this.tab = wanted;
     }
+    // From the pricing page: /dashboard/billing?plan=pro&period=annual
+    if (q.get('period') === 'annual') {
+      this.period = 'annual';
+    }
+    const picked = q.get('plan');
+    this.picked = picked === 'starter' || picked === 'pro' ? picked : null;
     // Paystack sends people back to /dashboard/billing?reference=... after paying for a plan.
     this.reference = q.get('reference') ?? q.get('trxref');
 
@@ -737,6 +751,33 @@ export class SettingsComponent implements OnInit, OnDestroy {
     return out;
   }
 
+  setPeriod(p: BillingPeriod): void {
+    this.period = p;
+    this.cdr.markForCheck();
+  }
+
+  /** Price shown on a plan card for the chosen period (kobo). */
+  priceOf(p: PlanInfo): number {
+    return this.period === 'annual' ? p.annualPriceKobo : p.priceKobo;
+  }
+
+  /** What yearly saves compared with 12 monthly payments (kobo). */
+  saving(p: PlanInfo): number {
+    return p.annualSavingKobo;
+  }
+
+  /** Renewing the current plan is a first-class action, since plans do not renew by themselves. */
+  buttonLabel(p: PlanInfo): string {
+    if (this.subscribingTo === p.key) {
+      return 'Opening Paystack';
+    }
+    const length = this.period === 'annual' ? 'a year' : '30 days';
+    if (this.isCurrent(p.key)) {
+      return `Renew for ${length}`;
+    }
+    return this.isCurrent('free') || p.key === 'pro' ? `Choose ${p.name}` : `Switch to ${p.name}`;
+  }
+
   isCurrent(key: string): boolean {
     return (this.billing?.plan ?? 'free') === key;
   }
@@ -747,11 +788,30 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
     this.subscribingTo = plan;
     this.billingError = '';
-    this.api.subscribe(plan).subscribe({
-      next: (url) => {
-        // Paystack brings them back to /dashboard/billing, where the payment is confirmed.
-        if (this.isBrowser) {
-          this.doc.defaultView?.location.assign(url);
+    this.api.subscribe(plan, this.period).subscribe({
+      next: (started) => {
+        if (!this.isBrowser) {
+          return;
+        }
+        if (started.checkout) {
+          // Payaza: pay in a popup, then confirm the payment with our server on this same page.
+          const reference = started.checkout.reference;
+          this.payaza
+            .open(started.checkout)
+            .then(() => this.router.navigate(['/dashboard/billing'], { queryParams: { reference }, replaceUrl: true }))
+            .then(() => {
+              this.reference = reference;
+              this.subscribingTo = null;
+              this.startConfirming();
+            })
+            .catch((e: Error) => {
+              this.subscribingTo = null;
+              this.billingError = e.message;
+              this.cdr.markForCheck();
+            });
+        } else if (started.authorizationUrl) {
+          // Paystack brings them back to /dashboard/billing, where the payment is confirmed.
+          this.doc.defaultView?.location.assign(started.authorizationUrl);
         }
       },
       error: (e: ApiError) => {

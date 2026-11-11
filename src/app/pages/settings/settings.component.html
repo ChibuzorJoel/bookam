@@ -286,20 +286,28 @@
             <ng-container *ngIf="billing.planExpiresAt && billing.plan !== 'free'">It runs until {{ dateText(billing.planExpiresAt) }}.</ng-container>
           </p>
 
+          <p class="msg msg--ok" *ngIf="picked && isCurrent('free')">You picked <strong>{{ picked === 'pro' ? 'Pro' : 'Starter' }}</strong>. Choose it below to pay with Paystack.</p>
+
+          <div class="period" role="group" aria-label="Billing period">
+            <button type="button" class="period__btn" [class.is-active]="period === 'monthly'" [attr.aria-pressed]="period === 'monthly'" (click)="setPeriod('monthly')">Monthly</button>
+            <button type="button" class="period__btn" [class.is-active]="period === 'annual'" [attr.aria-pressed]="period === 'annual'" (click)="setPeriod('annual')">Yearly <span class="period__tag">2 months free</span></button>
+          </div>
+
           <div class="plans">
             <article class="plan" *ngFor="let p of billing.plans" [class.is-current]="isCurrent(p.key)">
               <h3>{{ p.name }}</h3>
-              <p class="plan__price"><strong>{{ p.priceKobo ? naira(p.priceKobo) : '₦0' }}</strong><span *ngIf="p.priceKobo"> / month</span></p>
+              <p class="plan__price"><strong>{{ priceOf(p) ? naira(priceOf(p)) : '₦0' }}</strong><span *ngIf="p.priceKobo"> / {{ period === 'annual' ? 'year' : 'month' }}</span></p>
+              <p class="plan__save" *ngIf="period === 'annual' && p.priceKobo">You save {{ naira(saving(p)) }}</p>
               <ul class="plan__list">
                 <li *ngFor="let f of features(p)">{{ f }}</li>
               </ul>
               <span class="plan__now" *ngIf="isCurrent(p.key)">Your current plan</span>
-              <button type="button" class="btn btn--primary btn--block" *ngIf="!isCurrent(p.key) && p.key !== 'free'" [disabled]="!!subscribingTo" (click)="subscribe($any(p.key))">
-                {{ subscribingTo === p.key ? 'Opening Paystack' : (isCurrent('free') || p.key === 'pro' ? 'Choose ' + p.name : 'Switch to ' + p.name) }}
+              <button type="button" class="btn btn--primary btn--block" *ngIf="p.key !== 'free'" [disabled]="!!subscribingTo" (click)="subscribe($any(p.key))">
+                {{ buttonLabel(p) }}
               </button>
             </article>
           </div>
-          <p class="hint">Pay with card, bank transfer or USSD on Paystack. Plans last 30 days and do not renew by themselves. We will remind you before it ends.</p>
+          <p class="hint">Pay with card, bank transfer or USSD on Paystack. Monthly plans last 30 days and yearly plans 365 days. Neither renews by itself. We will remind you by SMS and email before it ends.</p>
 
           <ng-container *ngIf="billing.history.length">
             <h3 class="sub sub--gap">Payment history</h3>

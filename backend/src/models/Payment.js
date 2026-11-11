@@ -4,6 +4,8 @@ const paymentSchema = new mongoose.Schema(
   {
     businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true },
     bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true },
+    // Which provider took this payment. The field below holds OUR reference for either provider (name kept so old data still works).
+    provider: { type: String, enum: ['paystack', 'payaza'], default: 'paystack' },
     paystackReference: { type: String, required: true, unique: true }, // idempotency key for webhooks
     amount: { type: Number, required: true }, // kobo
     fee: { type: Number, default: 0 },        // kobo (Paystack fee)

@@ -38,6 +38,7 @@ export class PricingComponent implements OnInit {
   readonly faq = FAQ;
 
   plans: PlanInfo[] = [];
+  period: 'monthly' | 'annual' = 'monthly';
   loading = true;
   error = '';
 
@@ -87,7 +88,16 @@ export class PricingComponent implements OnInit {
   }
 
   price(p: PlanInfo): string {
-    return p.priceKobo ? `₦${this.money.format(p.priceKobo / 100)}` : '₦0';
+    const kobo = this.period === 'annual' ? p.annualPriceKobo : p.priceKobo;
+    return kobo ? `₦${this.money.format(kobo / 100)}` : '₦0';
+  }
+
+  saving(p: PlanInfo): string {
+    return `₦${this.money.format(p.annualSavingKobo / 100)}`;
+  }
+
+  setPeriod(v: 'monthly' | 'annual'): void {
+    this.period = v;
   }
 
   products(p: PlanInfo): string {
@@ -100,7 +110,7 @@ export class PricingComponent implements OnInit {
 
   /** Free goes straight to sign-up; paid plans carry the choice through sign-up to the Plan page. */
   query(p: PlanInfo): Record<string, string> {
-    return p.key === 'free' ? { mode: 'signup' } : { mode: 'signup', plan: p.key };
+    return p.key === 'free' ? { mode: 'signup' } : { mode: 'signup', plan: p.key, period: this.period };
   }
 
   popular(p: PlanInfo): boolean {

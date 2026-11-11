@@ -48,9 +48,19 @@ exports.signup = asyncHandler(async (req, res) => {
 
 // POST /auth/request-otp  -> for OTP login or password reset (same response whether or not the account exists)
 exports.requestOtp = asyncHandler(async (req, res) => {
-  const { phone, purpose } = req.body;
+  const { phone, purpose, channel } = req.body;
   const user = await User.findOne({ phone });
   const eligible = purpose === 'signup' ? user && !user.phoneVerified : user && user.phoneVerified;
+
+  if (channel === 'email') {
+    // Email proves the inbox, not the phone, so it can never complete a sign-up. Login and reset only,
+    // and only to an address the owner already verified. The reply is identical either way (no account probing).
+    if (eligible && purpose !== 'signup' && user.email && user.emailVerified) {
+      await otpService.sendOtp(phone, purpose, { email: user.email });
+    }
+    return res.json({ status: 'success', message: 'If this account has a verified email, we sent a code to it.' });
+  }
+
   if (eligible) await otpService.sendOtp(phone, purpose);
   res.json({ status: 'success', message: 'If the number is registered, a code has been sent.' });
 });

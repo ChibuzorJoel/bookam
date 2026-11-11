@@ -89,8 +89,8 @@ export class AuthService {
   }
 
   /** Same reply whether or not the number is registered, so the message is safe to show as is. */
-  requestOtp(phone: string, purpose: OtpPurpose): Observable<string> {
-    return this.http.post<Envelope<unknown>>(`${this.base}/request-otp`, { phone, purpose }).pipe(
+  requestOtp(phone: string, purpose: OtpPurpose, channel: 'sms' | 'email' = 'sms'): Observable<string> {
+    return this.http.post<Envelope<unknown>>(`${this.base}/request-otp`, { phone, purpose, channel }).pipe(
       map((res) => res.message ?? 'If the number is registered, a code has been sent.'),
       catchError((err) => this.fail(err))
     );

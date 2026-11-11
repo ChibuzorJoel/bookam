@@ -462,4 +462,11 @@ tbody th { text-align: left; font-weight: 600; }
 
 .cta { margin-top: 36px; padding: 32px 22px; border-radius: 28px; background: $green-800; text-align: center; h2 { margin-bottom: 16px; font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 800; letter-spacing: -0.02em; color: $white; } }
 a.btn { text-decoration: none; }
+
+.period { display: flex; width: fit-content; gap: 4px; margin: 0 auto 24px; padding: 4px; border-radius: 999px; background: $tint; }
+.period__btn { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; padding: 0 20px; border: 0; border-radius: 999px; background: transparent; font-weight: 800; cursor: pointer; color: $green-800; }
+.period__btn.is-active { background: $green-800; color: $white; }
+.period__btn:focus-visible { outline: 3px solid $green-600; outline-offset: 2px; }
+.period__tag { padding: 2px 8px; border-radius: 999px; background: $gold-500; color: $green-800; font-size: 0.72rem; }
+.plan__save { font-size: 0.9rem; font-weight: 800; color: $green-600; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }

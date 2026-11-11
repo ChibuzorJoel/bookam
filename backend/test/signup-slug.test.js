@@ -34,3 +34,9 @@ test('email verification validators', () => {
   assert.ok(v.emailVerify.safeParse({ email: 'a@b.co', otp: '123456' }).success);
   assert.ok(!v.emailVerify.safeParse({ email: 'a@b.co', otp: '12345' }).success);
 });
+
+test('requestOtp channel defaults to sms and accepts email', () => {
+  assert.strictEqual(v.requestOtp.parse({ phone: '08031234567' }).channel, 'sms');
+  assert.strictEqual(v.requestOtp.parse({ phone: '08031234567', channel: 'email' }).channel, 'email');
+  assert.ok(!v.requestOtp.safeParse({ phone: '08031234567', channel: 'whatsapp' }).success);
+});

@@ -2,12 +2,16 @@ const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
 const env = require('../config/env');
 const paystack = require('../services/paystack.service');
+const payaza = require('../services/payaza.service');
+const { payoutReady } = require('../utils/payout');
+
+const gateway = () => (env.PAYMENT_PROVIDER === 'payaza' ? payaza : paystack);
 const { Payment } = require('../models');
 const { getPagination, pageMeta } = require('../utils/pagination');
 
 // GET /me/payments/banks
 exports.listBanks = asyncHandler(async (req, res) => {
-  res.json({ status: 'success', data: { banks: await paystack.listBanks() } });
+  res.json({ status: 'success', data: { banks: await gateway().listBanks() } });
 });
 
 // PUT /me/payments/bank  { bankCode, accountNumber }
@@ -17,25 +21,46 @@ exports.setupBank = asyncHandler(async (req, res) => {
   const { bankCode, accountNumber } = req.body;
   const business = req.business;
 
-  const resolved = await paystack.resolveAccount(accountNumber, bankCode).catch(() => {
+  const resolved = await gateway().resolveAccount(accountNumber, bankCode).catch(() => {
     throw new AppError('We could not verify that account number. Check the bank and number and try again.', 400, 'BANK_RESOLVE_FAILED');
   });
-  const banks = await paystack.listBanks();
+  const banks = await gateway().listBanks();
   const bankName = banks.find((b) => b.code === bankCode)?.name || bankCode;
 
-  const payload = {
-    business_name: business.name,
-    settlement_bank: bankCode,
-    account_number: accountNumber,
-    percentage_charge: env.PLATFORM_FEE_PERCENT,
-    description: `Payouts for ${business.name}`,
-  };
+  if (env.PAYMENT_PROVIDER === 'payaza') {
+    // The split account IS the business's bank account. split_value is the PLATFORM's cut; the business gets the rest.
+    const payload = {
+      account_no: accountNumber,
+      account_name: resolved.account_name,
+      bank_code: bankCode,
+      name: business.name,
+      email: req.user.email || `${business.slug}@${env.PLACEHOLDER_EMAIL_DOMAIN}`,
+      currency: 'NGN',
+      country: 'NGA',
+      split_type: 'PERCENTAGE',
+      split_value: env.PLATFORM_FEE_PERCENT,
+    };
+    if (business.payazaSplitId) {
+      await payaza.updateSplitAccount(business.payazaSplitId, payload);
+    } else {
+      const created = await payaza.createSplitAccount(payload);
+      business.payazaSplitCode = created.code;
+      business.payazaSplitId = created.id;
+    }
+  } else {
+    const payload = {
+      business_name: business.name,
+      settlement_bank: bankCode,
+      account_number: accountNumber,
+      percentage_charge: env.PLATFORM_FEE_PERCENT,
+      description: `Payouts for ${business.name}`,
+    };
+    const sub = business.paystackSubaccountCode
+      ? await paystack.updateSubaccount(business.paystackSubaccountCode, payload)
+      : await paystack.createSubaccount(payload);
+    business.paystackSubaccountCode = sub.subaccount_code;
+  }
 
-  const sub = business.paystackSubaccountCode
-    ? await paystack.updateSubaccount(business.paystackSubaccountCode, payload)
-    : await paystack.createSubaccount(payload);
-
-  business.paystackSubaccountCode = sub.subaccount_code;
   business.bank = { bankCode, bankName, accountName: resolved.account_name, accountLast4: accountNumber.slice(-4) };
   await business.save();
 
@@ -58,7 +83,7 @@ exports.listPayments = asyncHandler(async (req, res) => {
     status: 'success',
     data: {
       bank: req.business.bank,
-      payoutsEnabled: Boolean(req.business.paystackSubaccountCode),
+      payoutsEnabled: payoutReady(req.business),
       totals: totals[0] ? { gross: totals[0].gross, fees: totals[0].fees, count: totals[0].count } : { gross: 0, fees: 0, count: 0 },
       payments,
       meta: pageMeta(page, limit, total),

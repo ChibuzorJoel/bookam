@@ -5,6 +5,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { API_URL } from '../core/api.config';
 import { AuthService, BusinessMode } from './auth.service';
+import { StartedPayment } from '../core/payaza';
 
 /* Money is in kobo everywhere (₦1,500 = 150000). */
 
@@ -102,16 +103,21 @@ export interface PlanInfo {
   key: PlanKey;
   name: string;
   priceKobo: number;
+  /** Price for 12 months (10 months charged). 0 on the free plan. */
+  annualPriceKobo: number;
+  annualSavingKobo: number;
   maxProducts: number | null;
   features: PlanFeatures;
 }
+
+export type BillingPeriod = 'monthly' | 'annual';
 
 export interface BillingStatus {
   plan: PlanKey;
   planExpiresAt: string | null;
   active: boolean;
   limits: { maxProducts: number | null; features: PlanFeatures };
-  history: { plan: PlanKey; amount: number; status: string; startedAt?: string; endsAt?: string; paystackReference: string }[];
+  history: { plan: PlanKey; period?: BillingPeriod; amount: number; status: string; startedAt?: string; endsAt?: string; paystackReference: string }[];
   plans: PlanInfo[];
 }
 
@@ -203,10 +209,10 @@ export class SettingsApi {
     );
   }
 
-  /** Returns the Paystack checkout address to send the owner to. */
-  subscribe(plan: 'starter' | 'pro'): Observable<string> {
-    return this.http.post<Envelope<{ authorizationUrl: string }>>(`${API_URL}/billing/subscribe`, { plan }).pipe(
-      map((r) => r.data.authorizationUrl),
+  /** Starts a plan payment: either a checkout address to send the owner to (Paystack) or a popup config (Payaza). */
+  subscribe(plan: 'starter' | 'pro', period: BillingPeriod = 'monthly'): Observable<StartedPayment> {
+    return this.http.post<Envelope<StartedPayment>>(`${API_URL}/billing/subscribe`, { plan, period }).pipe(
+      map((r) => r.data),
       catchError((e) => this.fail(e))
     );
   }

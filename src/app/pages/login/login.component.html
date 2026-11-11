@@ -239,6 +239,14 @@
             <p id="su-pw-err" class="field__error">{{ errorOf(signupForm.controls.password, 'Password') }}</p>
           </div>
 
+          <div class="agree">
+            <label class="agree__label">
+              <input id="su-agree" type="checkbox" formControlName="agree" [attr.aria-invalid]="signupForm.controls.agree.touched && signupForm.controls.agree.invalid ? 'true' : null" aria-describedby="su-agree-err" />
+              <span>I agree to the <a routerLink="/terms" target="_blank" rel="noopener">Terms of Use</a>, <a routerLink="/privacy" target="_blank" rel="noopener">Privacy Policy</a> and <a routerLink="/refunds" target="_blank" rel="noopener">Refund Policy</a>.</span>
+            </label>
+            <p id="su-agree-err" class="field__error" *ngIf="signupForm.controls.agree.touched && signupForm.controls.agree.invalid">Please agree to continue.</p>
+          </div>
+
           <button type="submit" class="btn btn--primary btn--block" [disabled]="busy">
             <ng-container *ngIf="busy; else signupLabel"><ng-container *ngTemplateOutlet="spinner"></ng-container> Creating your page</ng-container>
             <ng-template #signupLabel>Create my page</ng-template>
@@ -284,6 +292,7 @@
           <button type="button" class="link" (click)="resend()" [disabled]="resendIn > 0 || busy">
             {{ resendIn > 0 ? 'Send a new code in ' + resendIn + 's' : 'Send a new code' }}
           </button>
+          <button type="button" class="link" *ngIf="otpPurpose !== 'signup'" (click)="sendByEmail()" [disabled]="resendIn > 0 || busy">Send the code to my email</button>
           <button type="button" class="link" (click)="changeNumber()">Use a different number</button>
         </div>
       </ng-container>
@@ -375,6 +384,7 @@
           <button type="button" class="link" (click)="resendReset()" [disabled]="resendIn > 0 || busy">
             {{ resendIn > 0 ? 'Send a new code in ' + resendIn + 's' : 'Send a new code' }}
           </button>
+          <button type="button" class="link" (click)="sendByEmail()" [disabled]="resendIn > 0 || busy">Send the code to my email</button>
           <button type="button" class="link" (click)="setView('forgot')">Use a different number</button>
         </div>
       </ng-container>

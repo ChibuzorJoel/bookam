@@ -25,6 +25,7 @@ import {
   PublicService as PublicApi,
   PublicServiceItem,
 } from '../../services/public.service';
+import { PayazaCheckout, PayazaCheckoutConfig } from '../../core/payaza';
 
 type Tab = 'shop' | 'book';
 type BookStep = 1 | 2 | 3;
@@ -119,6 +120,7 @@ export class BusinessComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly cdr: ChangeDetectorRef,
+    private readonly payaza: PayazaCheckout,
     private readonly layout: LayoutService,
     private readonly title: Title,
     private readonly meta: Meta,
@@ -512,10 +514,26 @@ export class BusinessComponent implements OnInit, OnDestroy {
     );
   }
 
+  private payWithPayaza(checkout: PayazaCheckoutConfig, bookingCode: string): void {
+    this.payaza
+      .open(checkout)
+      .then(() => this.router.navigate(['/', this.slug, 'booking', bookingCode], { queryParams: { reference: checkout.reference } }))
+      .catch((e: Error) => {
+        this.bookBusy = false;
+        this.bookError = e.message;
+        this.cdr.markForCheck();
+      });
+  }
+
   private callBooking(request: Observable<BookingCreated>): void {
     request.subscribe({
       next: (res) => {
-        if (res.payment && this.isBrowser) {
+        if (res.payment?.checkout && this.isBrowser) {
+          // Payaza: pay in a popup, then the confirmation page checks the payment with our server.
+          this.payWithPayaza(res.payment.checkout, res.booking.bookingCode);
+          return;
+        }
+        if (res.payment?.authorizationUrl && this.isBrowser) {
           // Paystack brings the customer back to /<slug>/booking/<code>, where payment is confirmed.
           this.doc.defaultView?.location.assign(res.payment.authorizationUrl);
           return; // keep the button busy while the browser leaves

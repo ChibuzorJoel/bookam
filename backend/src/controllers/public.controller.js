@@ -1,4 +1,5 @@
 const AppError = require('../utils/AppError');
+const { payoutReady } = require('../utils/payout');
 const asyncHandler = require('../utils/asyncHandler');
 const { Business, Product, Service, Booking, Order } = require('../models');
 const { maskPhone } = require('../utils/phone');
@@ -67,7 +68,7 @@ exports.createBooking = asyncHandler(async (req, res) => {
 
   if (service.depositAmount > 0) assertFeature(business, 'deposits', 'This business is not accepting online deposits yet.');
   // Fail BEFORE taking the slot when the business cannot receive a deposit
-  if (service.depositAmount > 0 && !business.paystackSubaccountCode) {
+  if (service.depositAmount > 0 && !payoutReady(business)) {
     throw new AppError('This business has not finished setting up payments yet. Please contact them on WhatsApp.', 409, 'PAYOUT_NOT_SET');
   }
 

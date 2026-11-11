@@ -21,6 +21,18 @@ const PLANS = {
 };
 
 const PLAN_DURATION_DAYS = 30;
+
+// Billing periods. Annual = pay for 10 months, get 12 (two months free). Neither renews by itself.
+const ANNUAL_MONTHS_CHARGED = 10;
+const PERIODS = {
+  monthly: { months: 1, days: 30 },
+  annual: { months: 12, days: 365 },
+};
+const PERIOD_KEYS = Object.keys(PERIODS);
+
+/** Price in kobo for a paid plan and billing period. */
+const priceFor = (plan, period = 'monthly') =>
+  period === 'annual' ? PLANS[plan].priceKobo * ANNUAL_MONTHS_CHARGED : PLANS[plan].priceKobo;
 const PAID_PLANS = ['starter', 'pro'];
 
-module.exports = { PLANS, PLAN_DURATION_DAYS, PAID_PLANS };
+module.exports = { PLANS, PLAN_DURATION_DAYS, PAID_PLANS, PERIODS, PERIOD_KEYS, ANNUAL_MONTHS_CHARGED, priceFor };

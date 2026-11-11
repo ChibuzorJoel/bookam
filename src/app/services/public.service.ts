@@ -5,6 +5,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { API_URL } from '../core/api.config';
 import { AuthService, BusinessMode } from './auth.service';
+import { StartedPayment } from '../core/payaza';
 
 /* Money is in kobo everywhere (₦1,500 = 150000). */
 
@@ -76,7 +77,7 @@ export interface BookingView {
 
 export interface BookingCreated {
   booking: BookingView;
-  payment: { authorizationUrl: string; accessCode: string; reference: string; amount: number; holdExpiresAt: string } | null;
+  payment: (StartedPayment & { accessCode?: string | null; amount: number; holdExpiresAt: string }) | null;
 }
 
 export interface BookingRequest {

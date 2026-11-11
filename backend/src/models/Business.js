@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { payoutReady } = require('../utils/payout');
 const { PLANS } = require('../config/plans');
 const { effectivePlanKey } = require('../middleware/planGuard');
 
@@ -41,11 +42,14 @@ const businessSchema = new mongoose.Schema(
 
     plan: { type: String, enum: Object.keys(PLANS), default: 'free' },
     planExpiresAt: Date,
-    renewalReminderFor: Date, // the planExpiresAt value we already sent a renewal reminder for (avoids duplicates)
+    renewalReminderFor: Date, // legacy, kept so old documents still load
+    renewalSent: { type: [String], default: [] }, // '<planExpiresAt ms>:<stage>' notices already sent (d7, d3, d1, ended)
     customDomain: { type: String, lowercase: true, trim: true, unique: true, sparse: true },
 
     // Payout details (full account number is never stored; Paystack holds it on the subaccount)
     paystackSubaccountCode: String,
+    payazaSplitCode: String, // Payaza split account (the business's bank account); code is used at checkout
+    payazaSplitId: Number,   // numeric id, needed to update the split account
     bank: {
       bankCode: String,
       bankName: String,
@@ -94,7 +98,7 @@ businessSchema.methods.toPublicJSON = function () {
     mode: this.mode,
     hours: this.hours,
     showBadge: !plan.features.removeBadge,
-    acceptsDeposits: Boolean(this.paystackSubaccountCode),
+    acceptsDeposits: payoutReady(this),
   };
 };
 

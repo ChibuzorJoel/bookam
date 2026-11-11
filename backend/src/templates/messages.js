@@ -57,6 +57,12 @@ module.exports = {
   subscriptionActivated: ({ plan, endsAt }) =>
     `Your ${P} ${plan} plan is active until ${formatLagos(endsAt)}. Thank you!`,
 
-  subscriptionExpiring: ({ plan, endsAt }) =>
-    `Your ${P} ${plan} plan expires on ${formatLagos(endsAt)}. Renew from Dashboard > Billing to keep your features.`,
+  // Renewal notices. `days` is 7, 3 or 1. The yearly nudge is only added for owners paying monthly.
+  subscriptionExpiring: ({ plan, endsAt, days, link, yearlySaving }) =>
+    `Your ${P} ${plan} plan ends on ${formatLagos(endsAt)}${days ? ` (${days === 1 ? 'tomorrow' : `in ${days} days`})` : ''}. ` +
+    `Renew in one tap: ${link}` +
+    (yearlySaving ? ` Pay for a year and save ${formatNaira(yearlySaving)}.` : ''),
+
+  subscriptionEnded: ({ plan, link }) =>
+    `Your ${P} ${plan} plan has ended. Your page is still online on the Free plan, but bookings and deposits are paused. Renew to switch them back on: ${link}`,
 };

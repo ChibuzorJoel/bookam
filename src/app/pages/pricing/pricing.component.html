@@ -13,11 +13,17 @@
     </div>
 
     <ng-container *ngIf="plans.length">
+      <div class="period" role="group" aria-label="Billing period">
+        <button type="button" class="period__btn" [class.is-active]="period === 'monthly'" [attr.aria-pressed]="period === 'monthly'" (click)="setPeriod('monthly')">Monthly</button>
+        <button type="button" class="period__btn" [class.is-active]="period === 'annual'" [attr.aria-pressed]="period === 'annual'" (click)="setPeriod('annual')">Yearly <span class="period__tag">2 months free</span></button>
+      </div>
+
       <div class="plans">
         <article class="plan" *ngFor="let p of plans" [class.is-pop]="popular(p)">
           <span class="plan__tag" *ngIf="popular(p)">Most popular</span>
           <h2 class="plan__name">{{ p.name }}</h2>
-          <p class="plan__price"><strong>{{ price(p) }}</strong><span *ngIf="p.priceKobo"> / month</span></p>
+          <p class="plan__price"><strong>{{ price(p) }}</strong><span *ngIf="p.priceKobo"> / {{ period === 'annual' ? 'year' : 'month' }}</span></p>
+          <p class="plan__save" *ngIf="period === 'annual' && p.priceKobo">You save {{ saving(p) }}</p>
           <ul class="plan__list">
             <li>{{ products(p) }}</li>
             <ng-container *ngFor="let r of rows"><li *ngIf="has(p, r.key)">{{ r.label }}</li></ng-container>

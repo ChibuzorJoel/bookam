@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const RESERVED_SLUGS = new Set([
   'admin', 'api', 'auth', 'billing', 'dashboard', 'login', 'signup', 'logout', 'me', 'public', 'payments',
   'health', 'pricing', 'about', 'terms', 'privacy', 'support', 'help', 'static', 'assets', 'bookings',
-  'orders', 'cart', 'by-domain', 'webhook', 'book', 'item', 'booking', 'www', 'app', 'root', 'null', 'undefined',
+  'orders', 'cart', 'refunds', 'legal', 'cookies', 'contact', 'by-domain', 'webhook', 'book', 'item', 'booking', 'www', 'app', 'root', 'null', 'undefined',
 ]);
 
 function slugify(text) {

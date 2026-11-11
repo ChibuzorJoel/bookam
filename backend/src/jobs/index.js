@@ -1,9 +1,10 @@
 const cron = require('node-cron');
 const logger = require('../utils/logger');
-const { Booking, Business } = require('../models');
+const env = require('../config/env');
+const { Booking, Business, Subscription } = require('../models');
 const notifications = require('../services/notification.service');
 const messages = require('../templates/messages');
-const { PLANS } = require('../config/plans');
+const { PLANS, ANNUAL_MONTHS_CHARGED } = require('../config/plans');
 
 /** Runs a job and logs (never throws) so one failure cannot stop the scheduler. */
 const safe = (name, fn) => async () => {
@@ -57,25 +58,57 @@ async function sendReminders() {
   }
 }
 
-/** Hourly: downgrade lapsed paid plans to free, and warn owners 3 days before expiry. */
+/**
+ * Hourly: renewal notices at 7, 3 and 1 day before a paid plan ends, one more when it ends, then downgrade to free.
+ * Every notice is "claimed" atomically ('<expiry>:<stage>' added to renewalSent) before sending, so it goes out once
+ * per billing period even with several server instances, and a new payment resets the list.
+ */
+const DAY = 24 * 60 * 60 * 1000;
+const STAGES = [
+  { key: 'd1', days: 1 },
+  { key: 'd3', days: 3 },
+  { key: 'd7', days: 7 },
+];
+
+const claimNotice = async (business, stage) => {
+  const marker = `${new Date(business.planExpiresAt).getTime()}:${stage}`;
+  const res = await Business.updateOne({ _id: business._id, renewalSent: { $ne: marker } }, { $addToSet: { renewalSent: marker } });
+  return res.modifiedCount === 1;
+};
+
 async function checkSubscriptions() {
   const now = new Date();
+  const link = `${env.PUBLIC_BASE_URL}/dashboard/billing`;
 
-  const lapsed = await Business.updateMany({ plan: { $ne: 'free' }, planExpiresAt: { $lte: now } }, { $set: { plan: 'free' } });
-  if (lapsed.modifiedCount) logger.info(`Downgraded ${lapsed.modifiedCount} lapsed plan(s) to free`);
+  // 1) Plans that have ended: tell the owner once, then downgrade.
+  const lapsed = await Business.find({ plan: { $ne: 'free' }, planExpiresAt: { $lte: now } }).limit(200);
+  for (const b of lapsed) {
+    if (await claimNotice(b, 'ended')) {
+      await notifications.toOwner(b, 'subscription_ended', 'Your plan has ended', messages.subscriptionEnded({ plan: PLANS[b.plan]?.name || b.plan, link }));
+    }
+    // Only downgrade if it was not renewed while we were sending.
+    await Business.updateOne({ _id: b._id, planExpiresAt: b.planExpiresAt }, { $set: { plan: 'free' } });
+  }
+  if (lapsed.length) logger.info(`Downgraded ${lapsed.length} lapsed plan(s) to free`);
 
-  const soon = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  const expiring = await Business.find({
-    plan: { $ne: 'free' },
-    planExpiresAt: { $gt: now, $lte: soon },
-    renewalReminderFor: null, // matches "never reminded for this period"
-  }).limit(200);
-
+  // 2) Upcoming expiry: send the tightest stage that applies (a business 2 days out gets the 3-day notice, not 7).
+  const horizon = new Date(now.getTime() + 7 * DAY);
+  const expiring = await Business.find({ plan: { $ne: 'free' }, planExpiresAt: { $gt: now, $lte: horizon } }).limit(300);
   for (const b of expiring) {
-    // Mark first (atomic) so the reminder is sent only once per billing period
-    const marked = await Business.updateOne({ _id: b._id, renewalReminderFor: null }, { $set: { renewalReminderFor: b.planExpiresAt } });
-    if (!marked.modifiedCount) continue;
-    await notifications.toOwner(b, 'subscription_expiring', 'Your plan is about to expire', messages.subscriptionExpiring({ plan: PLANS[b.plan]?.name || b.plan, endsAt: b.planExpiresAt }));
+    const left = b.planExpiresAt.getTime() - now.getTime();
+    const stage = STAGES.find((s) => left <= s.days * DAY);
+    if (!stage) continue;
+    // If a tighter stage already went out, do not send a looser one.
+    if (!(await claimNotice(b, stage.key))) continue;
+    const plan = PLANS[b.plan];
+    const lastPaid = await Subscription.findOne({ businessId: b._id, status: 'active' }).sort({ createdAt: -1 }).select('period');
+    const yearlySaving = lastPaid?.period === 'annual' ? 0 : plan.priceKobo * (12 - ANNUAL_MONTHS_CHARGED);
+    await notifications.toOwner(
+      b,
+      'subscription_expiring',
+      'Your plan is about to end',
+      messages.subscriptionExpiring({ plan: plan?.name || b.plan, endsAt: b.planExpiresAt, days: stage.days, link, yearlySaving })
+    );
   }
 }
 
