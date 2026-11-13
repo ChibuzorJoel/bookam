@@ -1,8 +1,19 @@
+const dns = require('dns');
 const env = require('./src/config/env');
 const app = require('./src/app');
 const { connectDB, disconnectDB } = require('./src/config/db');
 const { startJobs } = require('./src/jobs');
 const logger = require('./src/utils/logger');
+
+
+const dnsServers = (process.env.DNS_SERVERS ?? '8.8.8.8,1.1.1.1')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+if (dnsServers.length) {
+  dns.setServers(dnsServers);
+  logger.info(`Using DNS servers: ${dnsServers.join(', ')}`);
+}
 
 async function main() {
   if (env.isProd) {
