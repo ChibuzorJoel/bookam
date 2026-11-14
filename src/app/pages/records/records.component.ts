@@ -25,6 +25,9 @@ const ORDER_FILTERS: { value: OrderStatus | ''; label: string }[] = [
   { value: '', label: 'All' },
   { value: 'new', label: 'New' },
   { value: 'contacted', label: 'Contacted' },
+  { value: 'preparing', label: 'Preparing' },
+  { value: 'out_for_delivery', label: 'On the way' },
+  { value: 'delivered', label: 'Delivered' },
   { value: 'completed', label: 'Done' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
@@ -37,6 +40,9 @@ const STATUS_TEXT: Record<string, string> = {
   no_show: 'No show',
   new: 'New',
   contacted: 'Contacted',
+  preparing: 'Preparing',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
 };
 
 @Component({
@@ -144,14 +150,41 @@ export class RecordsComponent implements OnInit, OnDestroy {
   }
 
   orderNext(o: DashOrder): { status: OrderStatus; label: string; danger?: boolean }[] {
+    const cancel = { status: 'cancelled' as OrderStatus, label: 'Cancel', danger: true };
+    const delivery = o.fulfilment === 'delivery';
     switch (o.status) {
       case 'new':
-        return [{ status: 'contacted', label: 'Mark contacted' }, { status: 'cancelled', label: 'Cancel', danger: true }];
+        return [{ status: 'preparing', label: 'Start preparing' }, cancel];
       case 'contacted':
-        return [{ status: 'completed', label: 'Mark done' }, { status: 'cancelled', label: 'Cancel', danger: true }];
+        return [{ status: 'preparing', label: 'Start preparing' }, cancel];
+      case 'preparing':
+        return [delivery ? { status: 'out_for_delivery', label: 'Out for delivery' } : { status: 'completed', label: 'Mark done' }, cancel];
+      case 'out_for_delivery':
+        return [cancel]; // closing it needs the customer's code, see confirmDelivery()
       default:
         return [];
     }
+  }
+
+  /* ----- Closing a delivery order with the customer's code ----- */
+  codeInput: Record<string, string> = {};
+  codeError: Record<string, string> = {};
+
+  onCodeInput(o: DashOrder, event: Event): void {
+    const el = event.target as HTMLInputElement;
+    el.value = el.value.replace(/\D/g, '').slice(0, 4);
+    this.codeInput[o._id] = el.value;
+    this.codeError[o._id] = '';
+  }
+
+  confirmDelivery(o: DashOrder): void {
+    const code = this.codeInput[o._id] ?? '';
+    if (code.length !== 4) {
+      this.codeError[o._id] = 'Enter the 4-digit code from the customer.';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.actOnOrder(o, 'delivered', code);
   }
 
   itemsText(o: DashOrder): string {
@@ -268,13 +301,13 @@ export class RecordsComponent implements OnInit, OnDestroy {
       });
   }
 
-  actOnOrder(o: DashOrder, status: OrderStatus): void {
+  actOnOrder(o: DashOrder, status: OrderStatus, code?: string): void {
     if (this.busyId) {
       return;
     }
     this.busyId = o._id;
     this.dash
-      .updateOrder(o._id, status)
+      .updateOrder(o._id, status, code)
       .pipe(
         finalize(() => {
           this.busyId = '';
@@ -284,9 +317,15 @@ export class RecordsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.orders = this.orders.map((x) => (x._id === o._id ? { ...x, status } : x));
-          this.say('Order updated.');
+          delete this.codeInput[o._id];
+          this.say(status === 'delivered' ? 'Delivery confirmed.' : 'Order updated.');
         },
-        error: (e: ApiError) => this.say(e.message),
+        error: (e: ApiError) => {
+          if (code) {
+            this.codeError[o._id] = e.message; // wrong code: show it next to the box
+          }
+          this.say(e.message);
+        },
       });
   }
 

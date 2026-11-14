@@ -9,6 +9,8 @@ import { Block, DOCS, LEGAL, LegalDoc } from '../../core/legal.content';
 /** One component for /terms, /privacy and /refunds. The route's data.doc picks which text to show. */
 @Component({
   selector: 'app-legal',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
   templateUrl: './legal.component.html',
   styleUrls: ['./legal.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

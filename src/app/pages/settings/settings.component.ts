@@ -734,7 +734,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
       out.push('Booking calendar');
     }
     if (f['deposits']) {
-      out.push('Deposits with Paystack');
+      out.push('Online deposits');
     }
     if (f['removeBadge']) {
       out.push('No "Powered by" badge');
@@ -744,6 +744,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
     }
     if (f['reminders']) {
       out.push('Appointment reminders');
+    }
+    if (f['delivery']) {
+      out.push('Delivery with fees by area');
     }
     if (f['analytics']) {
       out.push('Analytics');

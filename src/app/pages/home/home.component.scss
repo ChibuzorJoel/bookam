@@ -126,8 +126,8 @@ main:focus {
 
 .ic-check {
   flex: none;
-  width: 1.15em;
-  height: 1.15em;
+  font-size: 0.95em;
+  line-height: 1;
 }
 
 section[id] {
@@ -415,13 +415,15 @@ section[id] {
   }
 
   .ic-check {
-    margin-top: 0.1em;
-    padding: 3px;
-    width: 1.35em;
-    height: 1.35em;
+    display: inline-grid;
+    place-items: center;
+    margin-top: 0.05em;
+    width: 1.45em;
+    height: 1.45em;
     border-radius: 50%;
     background: $green-600;
     color: $white;
+    font-size: 0.8em;
   }
 }
 
@@ -547,8 +549,9 @@ section[id] {
   font-weight: 600;
   color: $muted;
 
-  svg {
+  i {
     flex: none;
+    font-size: 11px;
   }
 
   span {
@@ -778,8 +781,7 @@ section[id] {
   border-radius: 50%;
 
   .ic-check {
-    width: 16px;
-    height: 16px;
+    font-size: 14px;
   }
 }
 
@@ -829,7 +831,7 @@ section[id] {
 /* ==========================================================================
    SCROLLING TEXT BAND
    ========================================================================== */
-$marquee-phrase: 'Book a slot  \2726  Sell your products  \2726  Get paid by Paystack  \2726  Share one link  \2726  Made in Lagos  \2726  ';
+$marquee-phrase: 'Book a slot  \2726  Sell your products  \2726  Get paid online  \2726  Share one link  \2726  Made in Lagos  \2726  ';
 
 .stripe {
   position: relative;
@@ -1075,8 +1077,7 @@ $marquee-phrase: 'Book a slot  \2726  Sell your products  \2726  Get paid by Pay
   color: $white;
 
   .ic-check {
-    width: 18px;
-    height: 18px;
+    font-size: 16px;
   }
 }
 
@@ -1254,6 +1255,7 @@ $marquee-phrase: 'Book a slot  \2726  Sell your products  \2726  Get paid by Pay
   border-radius: 16px;
   background: $gold-500;
   color: $green-800;
+  font-size: 1.45rem;
   transition: transform 0.45s $ease;
 }
 

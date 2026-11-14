@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { payoutReady } = require('../utils/payout');
 const { PLANS } = require('../config/plans');
-const { effectivePlanKey } = require('../middleware/planGuard');
+const { effectivePlanKey, hasFeature } = require('../middleware/planGuard');
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -20,6 +20,11 @@ const exceptionSchema = new mongoose.Schema({
   startTime: { type: String, match: TIME_RE }, // omit both times = whole day blocked
   endTime: { type: String, match: TIME_RE },
   reason: { type: String, maxlength: 200 },
+});
+
+const deliveryZoneSchema = new mongoose.Schema({
+  name: { type: String, required: true, trim: true, maxlength: 40 }, // e.g. Ojo, Iyana-Iba, Alaba
+  fee: { type: Number, required: true, min: 0 }, // kobo
 });
 
 const THEMES = ['classic', 'sunset', 'ocean', 'forest', 'royal', 'noir'];
@@ -55,6 +60,13 @@ const businessSchema = new mongoose.Schema(
       bankName: String,
       accountName: String,
       accountLast4: String,
+    },
+
+    // Delivery for shop orders. Fees are per zone and set by the owner; the server prices every order from these.
+    delivery: {
+      enabled: { type: Boolean, default: false },
+      allowPickup: { type: Boolean, default: true },
+      zones: { type: [deliveryZoneSchema], default: [] },
     },
 
     status: { type: String, enum: ['pending', 'active', 'suspended'], default: 'active' },
@@ -99,6 +111,11 @@ businessSchema.methods.toPublicJSON = function () {
     hours: this.hours,
     showBadge: !plan.features.removeBadge,
     acceptsDeposits: payoutReady(this),
+    delivery: {
+      enabled: Boolean(this.delivery?.enabled) && this.delivery.zones.length > 0 && hasFeature(this, 'delivery'),
+      allowPickup: this.delivery?.allowPickup !== false,
+      zones: (this.delivery?.zones || []).map((z) => ({ id: z._id, name: z.name, fee: z.fee })),
+    },
   };
 };
 

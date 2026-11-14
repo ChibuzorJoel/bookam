@@ -1,0 +1,85 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <a class="back" routerLink="/dashboard"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Dashboard</a>
+
+    <header class="top">
+      <h1 class="top__title">Delivery</h1>
+      <p class="top__lead">Let customers choose delivery at checkout. You set the fee for each area, and the page adds it to their total.</p>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <div class="skeleton" *ngIf="loading" aria-busy="true" aria-label="Loading"><span></span><span></span></div>
+
+    <section class="panel" *ngIf="!loading && loadError">
+      <p class="msg msg--error" role="alert">{{ loadError }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button>
+    </section>
+
+    <ng-container *ngIf="!loading && !loadError">
+      <!-- Plan upsell -->
+      <section class="panel panel--lock" *ngIf="!available" aria-labelledby="dl-lock">
+        <h2 id="dl-lock" class="panel__title"><i class="fa-solid fa-lock" aria-hidden="true"></i> Delivery is on Starter and Pro</h2>
+        <p class="panel__lead">Upgrade your plan to offer delivery, set fees by area and track every order to your customer's door.</p>
+        <a class="btn btn--primary" routerLink="/dashboard/billing" [queryParams]="{ plan: 'starter' }">See plans</a>
+      </section>
+
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate *ngIf="available">
+        <section class="panel" aria-labelledby="dl-on">
+          <h2 id="dl-on" class="panel__title">Delivery option</h2>
+
+          <label class="switch">
+            <input type="checkbox" formControlName="enabled" />
+            <span class="switch__track" aria-hidden="true"></span>
+            <span class="switch__text"><strong>Offer delivery</strong><small>Shown at checkout next to pickup.</small></span>
+          </label>
+
+          <label class="switch" *ngIf="on">
+            <input type="checkbox" formControlName="allowPickup" />
+            <span class="switch__track" aria-hidden="true"></span>
+            <span class="switch__text"><strong>Customers can still pick up</strong><small>Turn this off if you only deliver.</small></span>
+          </label>
+        </section>
+
+        <section class="panel" aria-labelledby="dl-zones">
+          <h2 id="dl-zones" class="panel__title">Delivery areas and fees</h2>
+          <p class="panel__lead">Add each area you deliver to and what you charge. Example: Ojo ₦800, Iyana-Iba ₦1,200, Alaba ₦1,500.</p>
+
+          <ul class="zones" formArrayName="zones">
+            <li class="zone" *ngFor="let z of zones.controls; let i = index; trackBy: trackIndex" [formGroupName]="i">
+              <div class="field zone__name">
+                <label class="field__label" [for]="'z-name-' + i">Area</label>
+                <input [id]="'z-name-' + i" class="input" type="text" maxlength="40" placeholder="e.g. Ojo" formControlName="name" [attr.aria-invalid]="invalid(z.controls.name)" />
+              </div>
+              <div class="field zone__fee">
+                <label class="field__label" [for]="'z-fee-' + i">Fee (₦)</label>
+                <input [id]="'z-fee-' + i" class="input" type="number" inputmode="numeric" min="0" max="50000" step="50" placeholder="800" formControlName="fee" [attr.aria-invalid]="invalid(z.controls.fee)" />
+              </div>
+              <button type="button" class="zone__remove" (click)="removeZone(i)" [attr.aria-label]="'Remove area ' + (z.value.name || i + 1)">
+                <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
+              </button>
+            </li>
+          </ul>
+
+          <button type="button" class="btn btn--ghost btn--sm" (click)="addZone()" [disabled]="!canAddZone">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Add an area
+          </button>
+          <p class="hint hint--mt">Use 0 for free delivery in an area. Customers outside your list cannot choose delivery.</p>
+        </section>
+
+        <p class="msg msg--error" role="alert" *ngIf="saveError">{{ saveError }}</p>
+        <button type="submit" class="btn btn--primary btn--block save" [disabled]="saving">{{ saving ? 'Saving' : 'Save delivery settings' }}</button>
+
+        <section class="panel panel--how" aria-labelledby="dl-how">
+          <h2 id="dl-how" class="panel__title">How it works</h2>
+          <ol class="how">
+            <li>The customer picks delivery, chooses their area and enters their address. They see the fee before they order.</li>
+            <li>You get the order on WhatsApp with the address, phone number, items and fee.</li>
+            <li>In <a routerLink="/dashboard/orders">Bookings and orders</a>, mark it Preparing, then Out for delivery. The customer sees each step on their order page.</li>
+            <li>The customer gets a 4-digit code on that page. When the rider hands over the order, the customer gives the code and you enter it to mark the order Delivered.</li>
+          </ol>
+        </section>
+      </form>
+    </ng-container>
+  </div>
+</main>

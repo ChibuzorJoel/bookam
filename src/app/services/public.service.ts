@@ -32,6 +32,7 @@ export interface PublicBusiness {
   hours: PublicHour[];
   showBadge: boolean;
   acceptsDeposits: boolean;
+  delivery?: { enabled: boolean; allowPickup: boolean; zones: { id: string; name: string; fee: number }[] };
 }
 
 export interface PublicProduct {
@@ -95,11 +96,44 @@ export interface OrderRequest {
   customerPhone: string;
   note?: string;
   items: { productId: string; qty: number }[];
+  fulfilment?: 'pickup' | 'delivery';
+  zoneId?: string;
+  address?: string;
+  landmark?: string;
 }
 
 export interface OrderCreated {
-  order: { orderCode: string; items: { name: string; price: number; qty: number }[]; total: number; status: string };
+  order: {
+    orderCode: string;
+    items: { name: string; price: number; qty: number }[];
+    subtotal?: number;
+    deliveryFee?: number;
+    total: number;
+    fulfilment?: 'pickup' | 'delivery';
+    status: string;
+  };
   whatsappLink: string;
+}
+
+export type OrderStatus = 'new' | 'contacted' | 'preparing' | 'out_for_delivery' | 'delivered' | 'completed' | 'cancelled';
+
+/** The customer's order page. deliveryCode is only present for an open delivery order. */
+export interface OrderTracking {
+  order: {
+    orderCode: string;
+    status: OrderStatus;
+    fulfilment: 'pickup' | 'delivery';
+    customerName: string;
+    items: { name: string; price: number; qty: number }[];
+    subtotal: number;
+    deliveryFee: number;
+    total: number;
+    delivery?: { zone: string; address: string; landmark?: string };
+    deliveryCode?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  business: { name: string; slug: string; whatsappNumber?: string };
 }
 
 interface Envelope<T> {
@@ -141,6 +175,13 @@ export class PublicService {
 
   createOrder(slug: string, body: OrderRequest): Observable<OrderCreated> {
     return this.http.post<Envelope<OrderCreated>>(`${this.base}/${encodeURIComponent(slug)}/orders`, body).pipe(
+      map((r) => r.data),
+      catchError((e) => this.fail(e))
+    );
+  }
+
+  order(code: string): Observable<OrderTracking> {
+    return this.http.get<Envelope<OrderTracking>>(`${this.base}/orders/${encodeURIComponent(code)}`).pipe(
       map((r) => r.data),
       catchError((e) => this.fail(e))
     );

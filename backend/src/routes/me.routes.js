@@ -20,6 +20,8 @@ router.use(protect, restrictTo('owner'), loadBusiness);
 router.get('/business', business.getMyBusiness);
 router.patch('/business', validate(v.businessUpdate), business.updateMyBusiness);
 router.post('/business/logo', upload.single('logo'), business.uploadLogo);
+router.get('/delivery', business.getDelivery);
+router.put('/delivery', validate(v.deliveryUpdate), business.putDelivery);
 
 // Catalog: products (multipart so photos can be sent with the form)
 router.get('/products', catalog.listProducts);

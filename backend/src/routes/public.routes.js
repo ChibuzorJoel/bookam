@@ -8,6 +8,7 @@ const { publicWriteLimiter } = require('../middleware/rateLimit');
 // Static paths first so "bookings" and "by-domain" are never mistaken for a business slug.
 router.get('/by-domain', validate(v.domainQuery, 'query'), c.getByDomain);
 router.get('/bookings/:code', validate(v.codeParam, 'params'), c.getBookingByCode);
+router.get('/orders/:code', validate(v.codeParam, 'params'), c.getOrderByCode);
 
 router.get('/:slug', validate(v.slugParam, 'params'), c.getPage);
 router.get('/:slug/availability', validate(v.slugParam, 'params'), validate(v.availabilityQuery, 'query'), c.getAvailability);

@@ -1,16 +1,8 @@
-/* ==========================================================================
-   LagosPages footer  |  footer.component.scss
-   Self-contained: carries its own tokens and wrapper.
-   ========================================================================== */
-
 $green-900: #062421;
-$green-600: #0e7c3f;
+$green-800: #08302d;
 $gold-500: #ffc21a;
-$white: #ffffff;
-
+$gold-400: #ffd45c;
 $ease: cubic-bezier(0.22, 1, 0.36, 1);
-$bp-md: 760px;
-
 $font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-system, Arial, sans-serif;
 
 @mixin up($bp) {
@@ -22,128 +14,121 @@ $font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-sy
 :host {
   display: block;
   font-family: $font;
-  font-size: 16px;
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+.footer {
+  background: $green-900;
+  color: rgba(255, 255, 255, 0.78);
+  position: relative;
 }
 
-p {
-  margin: 0;
+.footer__stripe {
+  height: 4px;
+  background: linear-gradient(90deg, $gold-500, #0e7c3f);
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+.footer__inner {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 40px 20px 28px;
 
-svg {
-  display: block;
-}
-
-:focus-visible {
-  outline: 3px solid $gold-500;
-  outline-offset: 3px;
-  border-radius: 6px;
-}
-
-.wrap {
-  width: min(1180px, calc(100% - 32px));
-  margin-inline: auto;
-
-  @include up($bp-md) {
-    width: min(1180px, calc(100% - 64px));
+  @include up(760px) {
+    grid-template-columns: 1.6fr 1fr 1fr 1fr;
+    gap: 40px;
+    padding: 56px 24px 36px;
   }
 }
 
-/* ---------- Brand ---------- */
+.footer__brand {
+  grid-column: 1 / -1;
+  @include up(760px) {
+    grid-column: auto;
+  }
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 1.25rem;
+  color: #fff;
+  text-decoration: none;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  color: $white;
+  font-size: 20px;
+  letter-spacing: -0.01em;
 }
 
 .brand__mark {
+  display: block;
   width: 36px;
   height: 36px;
-  flex: none;
-  transition: transform 0.4s $ease;
-}
-
-.brand:hover .brand__mark {
-  transform: rotate(-8deg) scale(1.06);
-}
-
-/* ---------- Footer ---------- */
-.footer {
-  background: $green-900;
-  color: rgba(255, 255, 255, 0.76);
-}
-
-.footer__stripe {
-  height: 6px;
-  background: linear-gradient(90deg, $green-600 0 33.3%, $white 33.3% 66.6%, $green-600 66.6% 100%);
-}
-
-.footer__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 28px;
-  padding: clamp(40px, 6vw, 64px) 0 32px;
-
-  @include up($bp-md) {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: start;
-    gap: 48px;
-  }
+  border-radius: 10px;
 }
 
 .footer__about {
-  max-width: 32ch;
-  margin-top: 14px;
+  margin: 14px 0 0;
+  max-width: 34ch;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
-.footer__nav {
+.footer__col {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 26px;
+  flex-direction: column;
+  gap: 4px;
+}
 
-  @include up($bp-md) {
-    justify-content: flex-end;
-    max-width: 440px;
+.footer__title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $gold-400;
+}
+
+.footer__col a {
+  color: inherit;
+  text-decoration: none;
+  font-size: 15px;
+  padding: 8px 0;
+  min-height: 24px;
+  transition: color 0.2s $ease, transform 0.2s $ease;
+
+  &:hover,
+  &:focus-visible {
+    color: #fff;
+    transform: translateX(3px);
   }
-
-  a {
-    position: relative;
-    font-weight: 700;
-    color: $white;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: $gold-500;
-    }
+  &:focus-visible {
+    outline: 2px solid $gold-500;
+    outline-offset: 3px;
+    border-radius: 4px;
   }
 }
 
-.footer__legal {
-  padding: 20px 0 28px;
+.footer__bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.88rem;
+  padding: 18px 20px;
+  text-align: center;
+  font-size: 13px;
+
+  p {
+    margin: 0;
+  }
+  i {
+    color: $gold-500;
+    margin-left: 4px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition: none !important;
+  .footer__col a {
+    transition: none;
+    &:hover {
+      transform: none;
+    }
   }
 }

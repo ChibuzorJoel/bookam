@@ -57,6 +57,7 @@ export interface PlanFeatures {
   customDomain: boolean;
   reminders: boolean;
   analytics: boolean;
+  delivery: boolean;
 }
 
 export interface BusinessPatch {

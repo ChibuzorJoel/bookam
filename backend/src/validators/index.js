@@ -181,10 +181,41 @@ const publicOrderCreate = z.object({
   customerPhone: phone,
   note: optionalText(500),
   items: z.array(z.object({ productId: objectId, qty: z.number().int().min(1).max(50) })).min(1).max(50),
+  fulfilment: z.enum(['pickup', 'delivery']).default('pickup'),
+  zoneId: objectId.optional(),
+  address: z.string().trim().min(5, 'Enter your full delivery address').max(200).optional(),
+  landmark: optionalText(120),
+}).superRefine((o, ctx) => {
+  if (o.fulfilment === 'delivery') {
+    if (!o.zoneId) ctx.addIssue({ code: 'custom', path: ['zoneId'], message: 'Choose your area' });
+    if (!o.address) ctx.addIssue({ code: 'custom', path: ['address'], message: 'Enter your full delivery address' });
+  }
 });
 
-const orderUpdate = z.object({ status: z.enum(['new', 'contacted', 'completed', 'cancelled']) });
-const orderListQuery = pagingQuery.extend({ status: z.enum(['new', 'contacted', 'completed', 'cancelled']).optional() });
+const orderStatus = z.enum(['new', 'contacted', 'preparing', 'out_for_delivery', 'delivered', 'completed', 'cancelled']);
+const orderUpdate = z.object({ status: orderStatus, code: z.string().trim().regex(/^\d{4}$/, 'The code is 4 digits').optional() });
+const orderListQuery = pagingQuery.extend({ status: orderStatus.optional() });
+
+const deliveryUpdate = z.object({
+  enabled: z.boolean(),
+  allowPickup: z.boolean(),
+  zones: z
+    .array(
+      z.object({
+        name: z.string().trim().min(2, 'Give the area a name').max(40),
+        fee: z.number().int().min(0).max(5000000), // kobo, up to N50,000
+      })
+    )
+    .max(25, 'You can add up to 25 areas')
+    .superRefine((zones, ctx) => {
+      const seen = new Set();
+      zones.forEach((z, i) => {
+        const k = z.name.toLowerCase();
+        if (seen.has(k)) ctx.addIssue({ code: 'custom', path: [i, 'name'], message: 'This area is already listed' });
+        seen.add(k);
+      });
+    }),
+}).refine((d) => !d.enabled || d.zones.length > 0, { message: 'Add at least one delivery area first', path: ['zones'] });
 
 // ---------- billing / admin ----------
 const subscribe = z.object({ plan: z.enum(['starter', 'pro']), period: z.enum(['monthly', 'annual']).default('monthly') });
@@ -211,5 +242,5 @@ module.exports = {
   changePassword, emailRequest, emailVerify, businessUpdate, hoursUpdate, exceptionCreate, bankSetup,
   productCreate, productUpdate, serviceCreate, serviceUpdate,
   bookingListQuery, bookingAction, publicBookingCreate, availabilityQuery, publicOrderCreate,
-  orderUpdate, orderListQuery, subscribe, adminBusinessList, adminBusinessUpdate, domainQuery,
+  orderUpdate, orderListQuery, deliveryUpdate, subscribe, adminBusinessList, adminBusinessUpdate, domainQuery,
 };

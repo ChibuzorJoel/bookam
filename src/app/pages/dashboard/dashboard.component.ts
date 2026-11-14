@@ -38,6 +38,9 @@ const BOOKING_LABEL: Record<BookingStatus, string> = {
 const ORDER_LABEL: Record<OrderStatus, string> = {
   new: 'New',
   contacted: 'Contacted',
+  preparing: 'Preparing',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
   completed: 'Completed',
   cancelled: 'Cancelled',
 };
@@ -69,7 +72,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** From ?plan= after sign-up from the pricing section. */
   plan: 'starter' | 'pro' | null = null;
 
-  readonly orderStatuses: OrderStatus[] = ['new', 'contacted', 'completed', 'cancelled'];
+  /** Quick status menu for pickup orders. Delivery orders are managed on the orders page (they need the customer's code). */
+  readonly orderStatuses: OrderStatus[] = ['new', 'contacted', 'preparing', 'completed', 'cancelled'];
 
   private readonly isBrowser: boolean;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;

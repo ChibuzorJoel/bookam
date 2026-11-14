@@ -4,19 +4,19 @@ const PLANS = {
     name: 'Free',
     priceKobo: 0,
     maxProducts: 10,
-    features: { booking: false, deposits: false, removeBadge: false, customDomain: false, reminders: false, analytics: false },
+    features: { booking: false, deposits: false, removeBadge: false, customDomain: false, reminders: false, analytics: false, delivery: false },
   },
   starter: {
     name: 'Starter',
     priceKobo: 400000, // ₦4,000
     maxProducts: Infinity,
-    features: { booking: true, deposits: true, removeBadge: true, customDomain: false, reminders: false, analytics: false },
+    features: { booking: true, deposits: true, removeBadge: true, customDomain: false, reminders: false, analytics: false, delivery: true },
   },
   pro: {
     name: 'Pro',
     priceKobo: 1000000, // ₦10,000
     maxProducts: Infinity,
-    features: { booking: true, deposits: true, removeBadge: true, customDomain: true, reminders: true, analytics: true },
+    features: { booking: true, deposits: true, removeBadge: true, customDomain: true, reminders: true, analytics: true, delivery: true },
   },
 };
 

@@ -1,7 +1,5 @@
 <ng-template #check>
-  <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-    <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-  </svg>
+  <i class="fa-solid fa-check ic-check" aria-hidden="true"></i>
 </ng-template>
 
 <!-- ============================== LOADING ============================== -->
@@ -40,7 +38,7 @@
         <h1 class="hero__name">{{ business.name }}</h1>
         <p class="hero__tag" *ngIf="business.tagline">{{ business.tagline }}</p>
         <p class="hero__loc" *ngIf="location">
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
           {{ location }}
         </p>
         <div class="hero__links">
@@ -237,7 +235,11 @@
         <h2 id="cart-title" class="title title--sm">Order saved</h2>
         <p class="done__code">Order {{ orderDone.order.orderCode }}, total {{ naira(orderDone.order.total) }}</p>
         <p>One more step: send it to {{ business.name }} on WhatsApp so they can confirm it.</p>
-        <a class="btn btn--wa btn--block" [href]="orderDone.whatsappLink" target="_blank" rel="noopener noreferrer">Send order on WhatsApp</a>
+        <a class="btn btn--wa btn--block" [href]="orderDone.whatsappLink" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Send order on WhatsApp</a>
+        <a class="btn btn--ghost btn--block" [routerLink]="['/', business.slug, 'order', orderDone.order.orderCode]" (click)="finishOrder()">
+          <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
+          {{ orderDone.order.fulfilment === 'delivery' ? 'Track delivery and see your code' : 'Track this order' }}
+        </a>
         <button type="button" class="link link--center" (click)="finishOrder()">Close</button>
       </ng-container>
 
@@ -261,10 +263,28 @@
             <strong class="lines__sum">{{ naira(l.qty * l.product.price) }}</strong>
           </li>
         </ul>
-        <p class="total"><span>Total</span><strong>{{ naira(cartTotal) }}</strong></p>
+        <dl class="sums" *ngIf="mode === 'delivery'">
+          <div><dt>Items</dt><dd>{{ naira(cartTotal) }}</dd></div>
+          <div><dt>Delivery <span *ngIf="zone">({{ zone.name }})</span></dt><dd>{{ zone ? naira(zone.fee) : 'Choose your area' }}</dd></div>
+        </dl>
+        <p class="total"><span>Total</span><strong>{{ naira(grandTotal) }}</strong></p>
 
         <form [formGroup]="checkoutForm" (ngSubmit)="sendOrder()" novalidate>
           <p class="msg msg--error" role="alert" *ngIf="orderError">{{ orderError }}</p>
+
+          <fieldset class="field fulfil" *ngIf="deliveryOn && business.delivery?.allowPickup">
+            <legend class="field__label">How would you like to get it?</legend>
+            <div class="fulfil__row">
+              <label class="fulfil__opt" [class.is-on]="mode === 'pickup'">
+                <input type="radio" name="fulfilment" value="pickup" [checked]="mode === 'pickup'" (change)="setFulfilment('pickup')" />
+                <i class="fa-solid fa-store" aria-hidden="true"></i> Pickup
+              </label>
+              <label class="fulfil__opt" [class.is-on]="mode === 'delivery'">
+                <input type="radio" name="fulfilment" value="delivery" [checked]="mode === 'delivery'" (change)="setFulfilment('delivery')" />
+                <i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Delivery
+              </label>
+            </div>
+          </fieldset>
 
           <div class="field">
             <label class="field__label" for="o-name">Your name</label>
@@ -276,9 +296,29 @@
             <input id="o-phone" class="input" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567" formControlName="customerPhone" [attr.aria-invalid]="invalid(checkoutForm.controls.customerPhone)" />
             <p class="field__error" *ngIf="fieldError(checkoutForm.controls.customerPhone, 'Phone number') as m">{{ m }}</p>
           </div>
+          <ng-container *ngIf="mode === 'delivery'">
+            <div class="field">
+              <label class="field__label" for="o-zone">Your area</label>
+              <select id="o-zone" class="input" formControlName="zoneId" [attr.aria-invalid]="invalid(checkoutForm.controls.zoneId)">
+                <option value="" disabled>Choose your area</option>
+                <option *ngFor="let z of business.delivery?.zones" [value]="z.id">{{ z.name }} ({{ naira(z.fee) }})</option>
+              </select>
+              <p class="field__error" *ngIf="invalid(checkoutForm.controls.zoneId)">Choose your area</p>
+            </div>
+            <div class="field">
+              <label class="field__label" for="o-address">Delivery address</label>
+              <textarea id="o-address" class="input input--area" rows="2" maxlength="200" autocomplete="street-address" placeholder="House number, street" formControlName="address" [attr.aria-invalid]="invalid(checkoutForm.controls.address)"></textarea>
+              <p class="field__error" *ngIf="invalid(checkoutForm.controls.address)">Enter your full delivery address</p>
+            </div>
+            <div class="field">
+              <label class="field__label" for="o-landmark">Landmark <span class="opt">(optional)</span></label>
+              <input id="o-landmark" class="input" type="text" maxlength="120" placeholder="Near the market, opposite the church" formControlName="landmark" />
+            </div>
+          </ng-container>
+
           <div class="field">
             <label class="field__label" for="o-note">Note <span class="opt">(optional)</span></label>
-            <textarea id="o-note" class="input input--area" rows="2" maxlength="500" placeholder="Delivery address or anything else" formControlName="note"></textarea>
+            <textarea id="o-note" class="input input--area" rows="2" maxlength="500" placeholder="Anything else the seller should know" formControlName="note"></textarea>
           </div>
 
           <button type="submit" class="btn btn--accent btn--block" [disabled]="orderBusy">{{ orderBusy ? 'Saving your order' : 'Continue to WhatsApp' }}</button>

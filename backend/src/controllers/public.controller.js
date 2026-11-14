@@ -3,13 +3,14 @@ const { payoutReady } = require('../utils/payout');
 const asyncHandler = require('../utils/asyncHandler');
 const { Business, Product, Service, Booking, Order } = require('../models');
 const { maskPhone } = require('../utils/phone');
+const crypto = require('crypto');
 const { generateOrderCode } = require('../utils/ids');
 const { waLink } = require('../services/whatsapp.service');
 const messages = require('../templates/messages');
 const notifications = require('../services/notification.service');
 const { createBooking, getSlotsForDate, assertBookableDate } = require('../services/booking.service');
 const { startBookingPayment } = require('../services/payment.service');
-const { assertFeature } = require('../middleware/planGuard');
+const { assertFeature, hasFeature } = require('../middleware/planGuard');
 
 async function findActiveBusiness(slug) {
   const business = await Business.findOne({ slug, status: 'active' });
@@ -141,7 +142,21 @@ exports.createOrder = asyncHandler(async (req, res) => {
     if (!p.inStock) throw new AppError(`${p.name} is out of stock.`, 400, 'OUT_OF_STOCK');
     return { productId: p._id, name: p.name, price: p.price, qty: i.qty };
   });
-  const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  // Delivery: the fee comes from the owner's zone list, never from the browser.
+  const wantsDelivery = req.body.fulfilment === 'delivery';
+  const deliveryOn = Boolean(business.delivery?.enabled) && business.delivery.zones.length > 0 && hasFeature(business, 'delivery');
+  let zone = null;
+  if (wantsDelivery) {
+    if (!deliveryOn) throw new AppError('This shop does not offer delivery right now.', 400, 'DELIVERY_DISABLED');
+    zone = business.delivery.zones.id(req.body.zoneId);
+    if (!zone) throw new AppError('Please choose one of the delivery areas.', 400, 'ZONE_NOT_FOUND');
+  } else if (deliveryOn && business.delivery.allowPickup === false) {
+    throw new AppError('This shop only delivers. Please choose delivery.', 400, 'PICKUP_DISABLED');
+  }
+  const deliveryFee = zone ? zone.fee : 0;
+  const total = subtotal + deliveryFee;
 
   const order = await Order.create({
     businessId: business._id,
@@ -150,7 +165,16 @@ exports.createOrder = asyncHandler(async (req, res) => {
     customerPhone: req.body.customerPhone,
     note: req.body.note,
     items,
+    subtotal,
+    deliveryFee,
     total,
+    fulfilment: wantsDelivery ? 'delivery' : 'pickup',
+    ...(wantsDelivery
+      ? {
+          delivery: { zone: zone.name, address: req.body.address, landmark: req.body.landmark },
+          deliveryCode: String(crypto.randomInt(1000, 10000)), // 4 digits, shown only to the customer
+        }
+      : {}),
   });
 
   notifications.background(notifications.newOrder(order, business));
@@ -158,9 +182,46 @@ exports.createOrder = asyncHandler(async (req, res) => {
   res.status(201).json({
     status: 'success',
     data: {
-      order: { orderCode: order.orderCode, items: order.items, total: order.total, status: order.status },
+      order: {
+        orderCode: order.orderCode,
+        items: order.items,
+        subtotal: order.subtotal,
+        deliveryFee: order.deliveryFee,
+        total: order.total,
+        fulfilment: order.fulfilment,
+        status: order.status,
+      },
       // Pre-filled WhatsApp message with items, quantities, total and customer name
       whatsappLink: waLink(business.whatsappNumber, messages.orderWhatsApp({ order, business })),
+    },
+  });
+});
+
+// GET /public/orders/:code   (the customer's order page: status, and the delivery code once it is out for delivery)
+exports.getOrderByCode = asyncHandler(async (req, res) => {
+  const order = await Order.findOne({ orderCode: req.params.code }).select('+deliveryCode');
+  if (!order) throw new AppError('We could not find that order. Check the code and try again.', 404, 'ORDER_NOT_FOUND');
+  const business = await Business.findById(order.businessId);
+  const open = !['delivered', 'completed', 'cancelled'].includes(order.status);
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    status: 'success',
+    data: {
+      order: {
+        orderCode: order.orderCode,
+        status: order.status,
+        fulfilment: order.fulfilment,
+        customerName: order.customerName,
+        items: order.items,
+        subtotal: order.subtotal ?? order.total - (order.deliveryFee || 0),
+        deliveryFee: order.deliveryFee || 0,
+        total: order.total,
+        delivery: order.fulfilment === 'delivery' ? order.delivery : undefined,
+        deliveryCode: order.fulfilment === 'delivery' && open ? order.deliveryCode : undefined,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+      },
+      business: { name: business?.name, slug: business?.slug, whatsappNumber: business?.whatsappNumber },
     },
   });
 });

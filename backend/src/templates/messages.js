@@ -37,13 +37,24 @@ module.exports = {
 
   newOrderOwner: ({ order, business }) =>
     `New order ${order.orderCode} for ${business.name} from ${order.customerName} (${order.customerPhone}): ` +
-    `${order.items.map((i) => `${i.qty} x ${i.name}`).join(', ')}. Total ${formatNaira(order.total)}.`,
+    `${order.items.map((i) => `${i.qty} x ${i.name}`).join(', ')}. ` +
+    (order.fulfilment === 'delivery'
+      ? `DELIVERY to ${order.delivery.address}${order.delivery.landmark ? ` (near ${order.delivery.landmark})` : ''}, ${order.delivery.zone}. Delivery fee ${formatNaira(order.deliveryFee)}. `
+      : 'Pickup. ') +
+    `Total ${formatNaira(order.total)}.`,
 
   // Text of the pre-filled WhatsApp message the customer sends to the business
   orderWhatsApp: ({ order, business }) =>
     `Hello ${business.name}, I would like to order:\n` +
     order.items.map((i) => `- ${i.qty} x ${i.name} = ${formatNaira(i.price * i.qty)}`).join('\n') +
-    `\n\nTotal: ${formatNaira(order.total)}\nName: ${order.customerName}\nOrder ref: ${order.orderCode}`,
+    (order.fulfilment === 'delivery'
+      ? `\n\nSubtotal: ${formatNaira(order.subtotal ?? order.total - (order.deliveryFee || 0))}\nDelivery (${order.delivery.zone}): ${formatNaira(order.deliveryFee)}`
+      : '') +
+    `\n\nTotal: ${formatNaira(order.total)}` +
+    (order.fulfilment === 'delivery'
+      ? `\n\nDELIVERY\nAddress: ${order.delivery.address}${order.delivery.landmark ? `\nLandmark: ${order.delivery.landmark}` : ''}\nArea: ${order.delivery.zone}`
+      : '\n\nI will pick it up.') +
+    `\nName: ${order.customerName}\nPhone: ${order.customerPhone}\nOrder ref: ${order.orderCode}\nTrack: ${env.PUBLIC_BASE_URL}/${business.slug}/order/${order.orderCode}`,
 
   bookingWhatsAppFromCustomer: ({ booking, business }) =>
     `Hello ${business.name}, this is ${booking.customerName}. I booked ${booking.serviceName} for ${formatLagos(booking.startAt)}. Booking code: ${booking.bookingCode}`,

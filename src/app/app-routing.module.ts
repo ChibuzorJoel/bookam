@@ -12,6 +12,9 @@ const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
 
   { path: 'pricing', loadComponent: () => import('./pages/pricing/pricing.component').then((m) => m.PricingComponent) },
+  { path: 'terms', data: { doc: 'terms' }, loadComponent: () => import('./pages/legal/legal.component').then((m) => m.LegalComponent) },
+  { path: 'privacy', data: { doc: 'privacy' }, loadComponent: () => import('./pages/legal/legal.component').then((m) => m.LegalComponent) },
+  { path: 'refunds', data: { doc: 'refunds' }, loadComponent: () => import('./pages/legal/legal.component').then((m) => m.LegalComponent) },
   { path: 'login', canActivate: [guestGuard], loadComponent: () => import('./pages/login/login.component').then((m) => m.LoginComponent) },
 
   /* ---------- Owner dashboard ---------- */
@@ -20,15 +23,17 @@ const routes: Routes = [
   { path: 'dashboard/bookings', canActivate: [authGuard], loadComponent: () => import('./pages/records/records.component').then((m) => m.RecordsComponent) },
   { path: 'dashboard/orders', canActivate: [authGuard], data: { tab: 'orders' }, loadComponent: () => import('./pages/records/records.component').then((m) => m.RecordsComponent) },
   { path: 'dashboard/analytics', canActivate: [authGuard], loadComponent: () => import('./pages/analytics/analytics.component').then((m) => m.AnalyticsComponent) },
+  { path: 'dashboard/delivery', canActivate: [authGuard], loadComponent: () => import('./pages/delivery/delivery.component').then((m) => m.DeliveryComponent) },
   { path: 'dashboard/account', canActivate: [authGuard], loadComponent: () => import('./pages/account/account.component').then((m) => m.AccountComponent) },
   { path: 'dashboard/settings', canActivate: [authGuard], loadComponent: () => import('./pages/settings/settings.component').then((m) => m.SettingsComponent) },
-  // Paystack sends owners back here after they pay for a plan (?reference=...).
+  // Owners return here after paying for a plan (?reference=...).
   { path: 'dashboard/billing', canActivate: [authGuard], data: { tab: 'plan' }, loadComponent: () => import('./pages/settings/settings.component').then((m) => m.SettingsComponent) },
 
   /* ---------- Platform admin ---------- */
   { path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin.component').then((m) => m.AdminComponent) },
 
   /* ---------- Public business pages (keep these last) ---------- */
+  { path: ':slug/order/:code', loadComponent: () => import('./pages/order/order.component').then((m) => m.OrderComponent) },
   { path: ':slug/booking/:code', loadComponent: () => import('./pages/booking-confirmation/booking-confirmation.component').then((m) => m.BookingConfirmationComponent) },
   { path: ':slug', loadComponent: () => import('./pages/business/business.component').then((m) => m.BusinessComponent) },
 

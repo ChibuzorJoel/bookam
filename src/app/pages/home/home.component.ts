@@ -16,8 +16,8 @@ import { Router } from '@angular/router';
 const BRAND = 'LagosPages';
 const DOMAIN = 'lagospages.ng';
 const SITE_URL = `https://${DOMAIN}`;
-/** Create a 1200x630 image and put it at src/assets/og-home.jpg */
-const OG_IMAGE = `${SITE_URL}/assets/og-home.jpg`;
+/** The 1200x630 share image from the brand pack: src/assets/og-default.png */
+const OG_IMAGE = `${SITE_URL}/assets/og-default.png`;
 /** Where "Start free" sends people. Change to '/signup' when that route exists. */
 const SIGNUP_ROUTE = '/login';
 /** Optional. Digits only with country code, e.g. '2348012345678'. Leave '' to hide the link. */
@@ -27,14 +27,15 @@ const SUPPORT_WHATSAPP = '';
 const RESERVED_SLUGS = [
   'login', 'signup', 'register', 'dashboard', 'admin', 'api', 'book',
   'pricing', 'help', 'support', 'about', 'terms', 'privacy', 'home', 'app',
+  'refunds', 'legal', 'cookies', 'contact', 'orders', 'cart', 'billing', 'auth', 'me', 'public',
 ];
 
 const SEO = {
   title: `${BRAND}: Online booking and store page for your business`,
   description:
-    'Create a free booking and shop page for your Lagos business. Take bookings, collect deposits with Paystack and get orders on WhatsApp from one shareable link.',
+    'Create a free booking and shop page for your Lagos business. Take bookings, collect deposits online, offer delivery and get orders on WhatsApp from one shareable link.',
   keywords:
-    'booking page Lagos, online store Nigeria, WhatsApp store, Paystack deposits, appointment booking Nigeria, business link Instagram bio, hair stylist booking, barber booking, makeup artist booking',
+    'booking page Lagos, online store Nigeria, WhatsApp store, online deposits, delivery, appointment booking Nigeria, business link Instagram bio, hair stylist booking, barber booking, makeup artist booking',
 };
 
 interface DemoItem {
@@ -79,6 +80,7 @@ interface Plan {
 interface Feature {
   title: string;
   text: string;
+  /** Font Awesome classes, e.g. 'fa-solid fa-bolt' */
   icon: string;
 }
 interface Faq {
@@ -127,7 +129,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       ctaBg: '#B03A8C',
       alerts: [
         { title: 'New booking', body: 'Amaka, Saturday 12:30 pm' },
-        { title: 'Deposit received', body: '₦10,000 paid with Paystack' },
+        { title: 'Deposit received', body: '₦10,000 paid online' },
       ],
     },
     {
@@ -173,7 +175,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       ctaBg: '#0F5A52',
       alerts: [
         { title: 'New booking', body: 'Tunde, Saturday 10:30 am' },
-        { title: 'Deposit received', body: '₦1,000 paid with Paystack' },
+        { title: 'Deposit received', body: '₦1,000 paid online' },
       ],
     },
     {
@@ -196,7 +198,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       ctaBg: '#5B3FB0',
       alerts: [
         { title: 'New booking', body: 'Ngozi, Friday 2:00 pm' },
-        { title: 'Deposit received', body: '₦20,000 paid with Paystack' },
+        { title: 'Deposit received', body: '₦20,000 paid online' },
       ],
     },
   ];
@@ -218,7 +220,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     },
     {
       title: 'Get orders and bookings',
-      text: 'Orders reach your WhatsApp. Deposits are paid through Paystack and sent to your bank account.',
+      text: 'Orders reach your WhatsApp. Deposits are paid online and sent to your bank account.',
     },
   ];
 
@@ -226,32 +228,32 @@ export class HomeComponent implements OnInit, OnDestroy {
     {
       title: 'Light pages that load fast',
       text: 'Images are compressed and load as people scroll, so your page opens even on weak data.',
-      icon: 'M13 2L4 14h7l-1 8 9-12h-7l1-8z',
+      icon: 'fa-solid fa-bolt',
     },
     {
       title: 'Orders on WhatsApp',
-      text: 'Customers send you a ready-made message with items, quantities and total. No typing, no mix-ups.',
-      icon: 'M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z',
+      text: 'Customers send you a ready-made message with items, quantities, address and total. No typing, no mix-ups.',
+      icon: 'fa-brands fa-whatsapp',
     },
     {
-      title: 'Pay by card, transfer or USSD',
-      text: 'Deposits go through Paystack, with a clear secure-payment note on the page so customers trust it.',
-      icon: 'M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3 10h18M7 15h3',
+      title: 'Pay by card or transfer',
+      text: 'Deposits are paid online through a trusted payment partner, with a clear secure-payment note on the page so customers trust it.',
+      icon: 'fa-solid fa-credit-card',
+    },
+    {
+      title: 'Delivery with a safe code',
+      text: 'Set a fee for each area you deliver to. Customers track their order, and the sale only closes when they give the rider their 4-digit code.',
+      icon: 'fa-solid fa-motorcycle',
     },
     {
       title: 'Log in with your phone number',
       text: 'Get a one-time code by SMS. There is no long password to forget.',
-      icon: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
+      icon: 'fa-solid fa-mobile-screen-button',
     },
     {
       title: 'Easy to share anywhere',
       text: 'Copy your link, download a QR code, and show your logo and name in the WhatsApp link preview.',
-      icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h3v3h-3zM19 14v1M14 20h6',
-    },
-    {
-      title: 'Install on your phone',
-      text: 'Add your dashboard to your home screen and check today’s bookings like you would in an app.',
-      icon: 'M12 3v12M7 10l5 5 5-5M5 21h14',
+      icon: 'fa-solid fa-qrcode',
     },
   ];
 
@@ -280,7 +282,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       features: [
         'Unlimited products and services',
         'Booking calendar with open slots',
-        'Deposit payments with Paystack',
+        'Online deposit payments',
+        'Delivery with fees by area',
         'No “Powered by” badge',
       ],
       cta: 'Choose Starter',
@@ -310,7 +313,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     },
     {
       q: 'How do I get paid?',
-      a: 'Customers pay deposits through Paystack by card, bank transfer or USSD. You add your bank account in your dashboard and your money is paid out to it.',
+      a: 'Customers pay deposits online by card or bank transfer. You add your bank account in your dashboard and your money is paid out to it.',
     },
     {
       q: 'Can I just use it for WhatsApp orders?',
@@ -319,6 +322,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     {
       q: 'Will it work on a slow network?',
       a: 'Pages are built to stay light. Images are compressed and load as people scroll, so your page opens quickly even on weak data.',
+    },
+    {
+      q: 'Can I deliver orders to customers?',
+      a: 'Yes, on Starter and Pro. You set a delivery fee for each area, customers pick delivery at checkout and see the total before they order. They can follow their order online, and give the rider a 4-digit code to confirm it arrived.',
     },
     {
       q: 'Can I use my own domain name?',

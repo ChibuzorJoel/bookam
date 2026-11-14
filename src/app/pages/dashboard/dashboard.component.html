@@ -13,6 +13,7 @@
       <div class="top__actions">
         <a class="btn btn--primary" routerLink="/dashboard/catalog">Products and services</a>
         <a class="btn btn--ghost" routerLink="/dashboard/bookings">Bookings and orders</a>
+        <a class="btn btn--ghost" routerLink="/dashboard/delivery"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Delivery</a>
         <a class="btn btn--ghost" routerLink="/dashboard/analytics">Analytics</a>
         <a class="btn btn--ghost" routerLink="/dashboard/settings">Settings</a>
         <a class="btn btn--ghost" routerLink="/dashboard/account">Account</a>
@@ -113,6 +114,10 @@
 
                 <div class="item__side">
                   <strong class="item__total">{{ naira(o.total) }}</strong>
+                  <a class="chip" *ngIf="o.fulfilment === 'delivery'; else quickStatus" routerLink="/dashboard/orders">
+                    {{ orderLabel(o.status) }} &middot; Manage
+                  </a>
+                  <ng-template #quickStatus>
                   <label class="sr-only" [for]="'st-' + o._id">Status of order {{ o.orderCode }}</label>
                   <select
                     class="select"
@@ -123,6 +128,7 @@
                   >
                     <option *ngFor="let s of orderStatuses" [value]="s" [selected]="s === o.status">{{ orderLabel(s) }}</option>
                   </select>
+                  </ng-template>
                 </div>
               </li>
             </ul>

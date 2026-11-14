@@ -9,7 +9,7 @@ import { ApiError, AuthService } from './auth.service';
 /* Money is in kobo everywhere (₦1,500 = 150000). */
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
 export type BookingAction = 'confirm' | 'cancel' | 'complete' | 'no_show';
-export type OrderStatus = 'new' | 'contacted' | 'completed' | 'cancelled';
+export type OrderStatus = 'new' | 'contacted' | 'preparing' | 'out_for_delivery' | 'delivered' | 'completed' | 'cancelled';
 
 export interface DashBooking {
   _id: string;
@@ -32,7 +32,11 @@ export interface DashOrder {
   customerName: string;
   customerPhone: string;
   items: { name: string; price: number; qty: number }[];
+  subtotal?: number;
+  deliveryFee?: number;
   total: number;
+  fulfilment?: 'pickup' | 'delivery';
+  delivery?: { zone: string; address: string; landmark?: string };
   status: OrderStatus;
   createdAt: string;
 }
@@ -91,8 +95,9 @@ export class DashboardService {
     );
   }
 
-  updateOrder(id: string, status: OrderStatus): Observable<void> {
-    return this.http.patch<unknown>(`${this.base}/orders/${id}`, { status }).pipe(
+  /** `code` is the customer's 4-digit delivery code, needed to mark a delivery order Delivered. */
+  updateOrder(id: string, status: OrderStatus, code?: string): Observable<void> {
+    return this.http.patch<unknown>(`${this.base}/orders/${id}`, code ? { status, code } : { status }).pipe(
       map(() => undefined),
       catchError((e) => this.fail(e))
     );

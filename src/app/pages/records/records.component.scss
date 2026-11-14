@@ -438,3 +438,93 @@ main:focus {
 .more { display: flex; justify-content: center; margin-top: 8px; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+
+/* Delivery details on an order */
+.rec__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: $tint;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: $green-800;
+}
+
+.rec__addr {
+  color: $muted;
+  overflow-wrap: anywhere;
+
+  i {
+    margin-right: 4px;
+    color: $green-600;
+  }
+}
+
+.code {
+  margin: 10px 0 4px;
+  padding: 12px;
+  border: 2px dashed rgba(14, 124, 63, 0.45);
+  border-radius: 16px;
+  background: rgba(14, 124, 63, 0.06);
+}
+
+.code__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: $green-800;
+}
+
+.code__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.code__input {
+  width: 110px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid rgba(8, 48, 45, 0.2);
+  border-radius: 14px;
+  background: $white;
+  font-size: 20px; /* above 16px so iOS does not zoom */
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+
+  &:focus {
+    outline: none;
+    border-color: $green-600;
+    box-shadow: 0 0 0 4px rgba(14, 124, 63, 0.18);
+  }
+
+  &[aria-invalid='true'] {
+    border-color: $danger;
+  }
+}
+
+.chip--go {
+  border-color: $green-600;
+  background: $green-600;
+  color: $white;
+  font-weight: 800;
+}
+
+.code__error {
+  margin-top: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: $danger;
+}
+
+.status[data-s='preparing'] { background: rgba(255, 194, 26, 0.35); color: #6b4a00; }
+.status[data-s='out_for_delivery'] { background: rgba(15, 74, 69, 0.14); color: $green-700; }
+.status[data-s='delivered'] { background: rgba(14, 124, 63, 0.14); color: $green-600; }

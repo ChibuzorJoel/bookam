@@ -1,8 +1,6 @@
 <!-- Reusable check icon -->
 <ng-template #check>
-  <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-    <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-  </svg>
+  <i class="fa-solid fa-check ic-check" aria-hidden="true"></i>
 </ng-template>
 
 
@@ -15,7 +13,7 @@
         <h1 id="hero-title">Let customers book and pay from one link</h1>
         <p class="hero__lead">
           Create a booking page or online shop for your Lagos business in minutes. Share it on Instagram and WhatsApp,
-          collect deposits with Paystack and get orders straight to your phone.
+          collect deposits online and get orders straight to your phone.
         </p>
 
         <form class="claim" (submit)="claim($event)" novalidate>
@@ -45,7 +43,7 @@
         </p>
 
         <ul class="trust">
-          <li><ng-container *ngTemplateOutlet="check"></ng-container> Customers pay by card, transfer or USSD</li>
+          <li><ng-container *ngTemplateOutlet="check"></ng-container> Customers pay online by card or transfer</li>
           <li><ng-container *ngTemplateOutlet="check"></ng-container> Orders arrive on WhatsApp</li>
           <li><ng-container *ngTemplateOutlet="check"></ng-container> Works on any phone, no app to install</li>
         </ul>
@@ -60,9 +58,7 @@
             <ng-container *ngFor="let b of [active]; trackBy: trackById">
               <div class="screen" aria-hidden="true">
                 <div class="screen__url">
-                  <svg viewBox="0 0 16 16" width="12" height="12" focusable="false">
-                    <path d="M4.5 7V5.5a3.5 3.5 0 0 1 7 0V7M3.5 7h9v6.5h-9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-                  </svg>
+                  <i class="fa-solid fa-lock" aria-hidden="true"></i>
                   <span>{{ displayUrl }}</span>
                 </div>
 
@@ -100,7 +96,7 @@
                 </div>
 
                 <div class="screen__cta" [style.background]="b.ctaBg">{{ b.cta }}</div>
-                <p class="screen__powered">Pay securely with Paystack</p>
+                <p class="screen__powered">Pay securely online</p>
               </div>
             </ng-container>
           </div>
@@ -158,7 +154,8 @@
           <ul class="ticks">
             <li><ng-container *ngTemplateOutlet="check"></ng-container> Product grid with photos, prices and stock status</li>
             <li><ng-container *ngTemplateOutlet="check"></ng-container> Pre-filled WhatsApp order with items and total</li>
-            <li><ng-container *ngTemplateOutlet="check"></ng-container> Every order saved in your dashboard</li>
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Pickup or delivery, with a fee for each area you serve</li>
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Every order saved in your dashboard, with live status for your customer</li>
           </ul>
           <div class="bubble" aria-hidden="true">
             <p>
@@ -179,7 +176,7 @@
           </p>
           <ul class="ticks">
             <li><ng-container *ngTemplateOutlet="check"></ng-container> Only open days and free time slots are shown</li>
-            <li><ng-container *ngTemplateOutlet="check"></ng-container> Deposits by card, bank transfer or USSD through Paystack</li>
+            <li><ng-container *ngTemplateOutlet="check"></ng-container> Deposits paid online by card or bank transfer</li>
             <li><ng-container *ngTemplateOutlet="check"></ng-container> Booking code and confirmation by WhatsApp or SMS</li>
           </ul>
           <div class="ticket" aria-hidden="true">
@@ -241,9 +238,7 @@
       <ul class="features">
         <li class="feature" *ngFor="let f of features">
           <span class="feature__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="26" height="26" focusable="false">
-              <path [attr.d]="f.icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
+            <i [class]="f.icon"></i>
           </span>
           <h3>{{ f.title }}</h3>
           <p>{{ f.text }}</p>
@@ -257,7 +252,7 @@
     <div class="wrap">
       <div class="section__head">
         <h2 id="pricing-title">Start free. Upgrade when you’re busy.</h2>
-        <p>Prices are in naira. Paystack’s processing fee applies to online payments.</p>
+        <p>Prices are in naira. A small payment-processing fee applies to online payments.</p>
       </div>
 
       <div class="plans">
@@ -319,4 +314,3 @@
     </div>
   </section>
 </main>
-

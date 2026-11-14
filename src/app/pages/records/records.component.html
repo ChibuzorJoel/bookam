@@ -1,6 +1,6 @@
 <main id="main" tabindex="-1" class="set">
   <div class="wrap">
-    <a class="back" routerLink="/dashboard">&larr; Dashboard</a>
+    <a class="back" routerLink="/dashboard"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Dashboard</a>
 
     <header class="top">
       <h1 class="top__title">Bookings and orders</h1>
@@ -60,7 +60,26 @@
           <span class="status" [attr.data-s]="o.status">{{ statusText(o.status) }}</span>
         </div>
         <p class="rec__line">{{ itemsText(o) }}</p>
-        <p class="rec__line"><strong>{{ naira(o.total) }}</strong></p>
+        <p class="rec__line">
+          <strong>{{ naira(o.total) }}</strong>
+          <span class="rec__tag" *ngIf="o.fulfilment === 'delivery'"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Delivery {{ naira(o.deliveryFee || 0) }}</span>
+          <span class="rec__tag" *ngIf="o.fulfilment !== 'delivery'"><i class="fa-solid fa-store" aria-hidden="true"></i> Pickup</span>
+        </p>
+        <p class="rec__line rec__addr" *ngIf="o.fulfilment === 'delivery' && o.delivery">
+          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+          {{ o.delivery.address }}<ng-container *ngIf="o.delivery.landmark">, near {{ o.delivery.landmark }}</ng-container> ({{ o.delivery.zone }})
+        </p>
+
+        <!-- Rider handed it over: the customer gives the code, the owner types it in -->
+        <form class="code" *ngIf="o.fulfilment === 'delivery' && o.status === 'out_for_delivery'" (submit)="$event.preventDefault(); confirmDelivery(o)">
+          <label class="code__label" [for]="'code-' + o._id">Customer's 4-digit code</label>
+          <div class="code__row">
+            <input [id]="'code-' + o._id" class="code__input" type="text" inputmode="numeric" autocomplete="off" maxlength="4" placeholder="0000" [value]="codeInput[o._id] || ''" (input)="onCodeInput(o, $event)" [attr.aria-invalid]="codeError[o._id] ? 'true' : null" />
+            <button type="submit" class="chip chip--go" [disabled]="busyId === o._id">Confirm delivered</button>
+          </div>
+          <p class="code__error" role="alert" *ngIf="codeError[o._id]">{{ codeError[o._id] }}</p>
+        </form>
+
         <div class="rec__actions">
           <a class="chip" [href]="wa(o.customerPhone)" target="_blank" rel="noopener">WhatsApp</a>
           <a class="chip" [href]="'tel:' + o.customerPhone">Call</a>

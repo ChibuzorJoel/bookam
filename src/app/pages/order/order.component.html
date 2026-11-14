@@ -1,0 +1,65 @@
+<main id="main" tabindex="-1" class="ord">
+  <div class="card" aria-live="polite">
+    <ng-container *ngIf="loading">
+      <div class="spinner" aria-hidden="true"></div>
+      <h1>Finding your order</h1>
+      <p>One moment.</p>
+    </ng-container>
+
+    <ng-container *ngIf="!loading && error">
+      <h1>We could not find that order</h1>
+      <p>{{ error }}</p>
+      <button type="button" class="btn btn--dark" (click)="retry()">Try again</button>
+      <a class="link" [routerLink]="['/', slug]">Back to the shop</a>
+    </ng-container>
+
+    <ng-container *ngIf="!loading && data as d">
+      <span class="badge" [class.badge--done]="isDone" [class.badge--bad]="isCancelled" aria-hidden="true">
+        <i class="fa-solid" [ngClass]="isCancelled ? 'fa-xmark' : isDone ? 'fa-check' : isDelivery && d.order.status === 'out_for_delivery' ? 'fa-motorcycle' : 'fa-box-open'"></i>
+      </span>
+      <h1>{{ headline }}</h1>
+      <p *ngIf="!isCancelled">{{ d.business.name }} &middot; Order {{ d.order.orderCode }}</p>
+      <p *ngIf="isCancelled">Please message {{ d.business.name }} if you think this is a mistake.</p>
+
+      <!-- Progress -->
+      <ol class="steps" *ngIf="!isCancelled" [attr.aria-label]="'Order progress: ' + steps[stepIndex].label">
+        <li *ngFor="let s of steps; let i = index; trackBy: trackStep" [class.is-done]="i < stepIndex || isDone" [class.is-now]="i === stepIndex && !isDone">
+          <span class="steps__dot" aria-hidden="true"><i class="fa-solid fa-check" *ngIf="i < stepIndex || isDone"></i></span>
+          <span class="steps__label">{{ s.label }}</span>
+        </li>
+      </ol>
+
+      <!-- Delivery code: shown while the order is open -->
+      <section class="code" *ngIf="isDelivery && d.order.deliveryCode && isOpen" aria-labelledby="code-title">
+        <h2 id="code-title">Your delivery code</h2>
+        <p class="code__digits" [attr.aria-label]="'Delivery code ' + d.order.deliveryCode">
+          <span *ngFor="let n of codeDigits">{{ n }}</span>
+        </p>
+        <p class="code__hint">Give this code to the rider <strong>only when your order is in your hands</strong>. The order closes when {{ d.business.name }} enters it. Do not share it before then.</p>
+      </section>
+
+      <!-- Where it goes -->
+      <dl class="info" *ngIf="isDelivery && d.order.delivery">
+        <div><dt>Deliver to</dt><dd>{{ d.order.delivery.address }}<ng-container *ngIf="d.order.delivery.landmark"><br />Near {{ d.order.delivery.landmark }}</ng-container><br />{{ d.order.delivery.zone }}</dd></div>
+      </dl>
+
+      <!-- Items -->
+      <ul class="items" aria-label="Items in this order">
+        <li *ngFor="let i of d.order.items">
+          <span>{{ i.qty }} &times; {{ i.name }}</span>
+          <strong>{{ naira(i.qty * i.price) }}</strong>
+        </li>
+        <li class="items__sub" *ngIf="isDelivery"><span>Items</span><span>{{ naira(d.order.subtotal) }}</span></li>
+        <li class="items__sub" *ngIf="isDelivery"><span>Delivery</span><span>{{ naira(d.order.deliveryFee) }}</span></li>
+        <li class="items__total"><span>Total to pay</span><strong>{{ naira(d.order.total) }}</strong></li>
+      </ul>
+      <p class="pay-note" *ngIf="isOpen">Pay {{ d.business.name }} as you agreed on WhatsApp.</p>
+
+      <a class="btn btn--wa" *ngIf="d.business.whatsappNumber" [href]="'https://wa.me/' + d.business.whatsappNumber + '?text=' + 'Hello%2C%20about%20my%20order%20' + d.order.orderCode" target="_blank" rel="noopener noreferrer">
+        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Message {{ d.business.name }}
+      </a>
+      <a class="link" [routerLink]="['/', d.business.slug]">Back to {{ d.business.name }}</a>
+      <p class="live" *ngIf="isOpen"><i class="fa-solid fa-rotate" aria-hidden="true"></i> This page updates by itself.</p>
+    </ng-container>
+  </div>
+</main>

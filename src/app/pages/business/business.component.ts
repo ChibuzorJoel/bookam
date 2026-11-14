@@ -88,7 +88,13 @@ export class BusinessComponent implements OnInit, OnDestroy {
     customerName: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(2), Validators.maxLength(80)] }),
     customerPhone: new FormControl('', { nonNullable: true, validators: [Validators.required, phoneValidator] }),
     note: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(500)] }),
+    zoneId: new FormControl('', { nonNullable: true }),
+    address: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(200)] }),
+    landmark: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(120)] }),
   });
+
+  /** Only used when the shop offers both pickup and delivery. */
+  fulfilment: 'pickup' | 'delivery' = 'pickup';
 
   /* ---------------- Booking state ---------------- */
   bookStep: BookStep = 1;
@@ -309,6 +315,48 @@ export class BusinessComponent implements OnInit, OnDestroy {
     return this.cart.reduce((n, l) => n + l.qty * l.product.price, 0);
   }
 
+  /* ----- Delivery ----- */
+  get deliveryOn(): boolean {
+    return !!this.business?.delivery?.enabled && this.business.delivery.zones.length > 0;
+  }
+
+  /** What the customer is actually choosing. Delivery-only shops always deliver. */
+  get mode(): 'pickup' | 'delivery' {
+    if (!this.deliveryOn) {
+      return 'pickup';
+    }
+    return this.business?.delivery?.allowPickup === false ? 'delivery' : this.fulfilment;
+  }
+
+  get zone(): { id: string; name: string; fee: number } | null {
+    const id = this.checkoutForm.controls.zoneId.value;
+    return this.business?.delivery?.zones.find((z) => z.id === id) ?? null;
+  }
+
+  get deliveryFee(): number {
+    return this.mode === 'delivery' ? (this.zone?.fee ?? 0) : 0;
+  }
+
+  get grandTotal(): number {
+    return this.cartTotal + this.deliveryFee;
+  }
+
+  setFulfilment(f: 'pickup' | 'delivery'): void {
+    this.fulfilment = f;
+    this.syncDeliveryValidators();
+    this.cdr.markForCheck();
+  }
+
+  /** Area and address are only required when the customer chose delivery. */
+  private syncDeliveryValidators(): void {
+    const c = this.checkoutForm.controls;
+    const delivery = this.mode === 'delivery';
+    c.zoneId.setValidators(delivery ? [Validators.required] : []);
+    c.address.setValidators(delivery ? [Validators.required, Validators.minLength(5), Validators.maxLength(200)] : [Validators.maxLength(200)]);
+    c.zoneId.updateValueAndValidity({ emitEvent: false });
+    c.address.updateValueAndValidity({ emitEvent: false });
+  }
+
   qtyOf(p: PublicProduct): number {
     return this.cart.find((l) => l.product._id === p._id)?.qty ?? 0;
   }
@@ -343,6 +391,7 @@ export class BusinessComponent implements OnInit, OnDestroy {
   openCart(): void {
     this.cartOpen = true;
     this.orderError = '';
+    this.syncDeliveryValidators();
   }
 
   closeCart(): void {
@@ -366,6 +415,14 @@ export class BusinessComponent implements OnInit, OnDestroy {
         customerPhone: v.customerPhone.trim(),
         ...(v.note.trim() ? { note: v.note.trim() } : {}),
         items: this.cart.map((l) => ({ productId: l.product._id, qty: l.qty })),
+        ...(this.mode === 'delivery'
+          ? {
+              fulfilment: 'delivery' as const,
+              zoneId: v.zoneId,
+              address: v.address.trim(),
+              ...(v.landmark.trim() ? { landmark: v.landmark.trim() } : {}),
+            }
+          : {}),
       })
       .pipe(
         finalize(() => {
@@ -389,7 +446,8 @@ export class BusinessComponent implements OnInit, OnDestroy {
   finishOrder(): void {
     this.orderDone = null;
     this.cartOpen = false;
-    this.checkoutForm.reset({ customerName: '', customerPhone: '', note: '' });
+    this.checkoutForm.reset({ customerName: '', customerPhone: '', note: '', zoneId: '', address: '', landmark: '' });
+    this.fulfilment = 'pickup';
   }
 
   /* ============================== BOOKING ============================== */
