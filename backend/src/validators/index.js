@@ -236,7 +236,46 @@ const adminBusinessUpdate = z
 
 const domainQuery = z.object({ host: z.string().trim().toLowerCase().min(3).max(255) });
 
+// ---------- assistant ----------
+const assistantChat = z.object({
+  messages: z
+    .array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().max(2000) }))
+    .min(1, 'Type a question')
+    .max(20),
+});
+const knowledgeCreate = z.object({
+  question: z.string().trim().min(3, 'Add a question').max(200),
+  answer: z.string().trim().min(3, 'Add an answer').max(1500),
+  active: z.boolean().optional(),
+});
+const knowledgeUpdate = knowledgeCreate.partial().refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+const gapResolve = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('answer'), question: z.string().trim().min(3).max(200).optional(), answer: z.string().trim().min(3, 'Add an answer').max(1500) }),
+  z.object({ action: z.literal('ignore') }),
+]);
+
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+const adminPaymentList = pagingQuery.extend({
+  kind: z.enum(['deposit', 'subscription']).default('subscription'),
+  status: z.string().trim().max(20).optional(),
+  q: z.string().trim().max(80).optional(),
+  from: isoDay.optional(),
+  to: isoDay.optional(),
+});
+const supportCreate = z.object({
+  name: z.string().trim().min(2, 'Enter your name').max(80),
+  contact: z.string().trim().min(5, 'Enter a phone number or email').max(120),
+  message: z.string().trim().min(5, 'Tell us how we can help').max(1500),
+  page: z.string().trim().max(120).optional(),
+});
+const supportList = pagingQuery.extend({ status: z.enum(['open', 'replied', 'closed']).optional() });
+const supportUpdate = z
+  .object({ status: z.enum(['open', 'replied', 'closed']).optional(), note: z.string().trim().max(1000).optional() })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
 module.exports = {
+  adminPaymentList, supportCreate, supportList, supportUpdate,
+  assistantChat, knowledgeCreate, knowledgeUpdate, gapResolve,
   idParam, slugParam, codeParam, referenceParam, pagingQuery,
   signup, requestOtp, verifyOtp, login, resetPassword,
   changePassword, emailRequest, emailVerify, businessUpdate, hoursUpdate, exceptionCreate, bankSetup,

@@ -1,0 +1,101 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <a class="back" routerLink="/admin"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Admin</a>
+        <h1 class="top__title">{{ d?.business?.name || 'Business' }}</h1>
+        <p class="top__lead" *ngIf="d">bookam.ng/{{ d.business.slug }} &middot; {{ d.business.mode }}</p>
+      </div>
+      <div class="top__actions" *ngIf="d">
+        <a class="btn btn--ghost btn--sm" [routerLink]="['/', d.business.slug]" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> Open page</a>
+        <a class="btn btn--ghost btn--sm" *ngIf="whatsapp(d.business.owner?.phone) as wa" [href]="wa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp owner</a>
+      </div>
+    </header>
+
+    <div class="msg msg--error" role="alert" *ngIf="error"><p>{{ error }}</p><button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button></div>
+    <div class="skeleton" *ngIf="loading" aria-busy="true"><span></span><span></span></div>
+
+    <ng-container *ngIf="d && !loading">
+      <section class="stats" aria-label="Numbers">
+        <div class="tile"><span>Bookings</span><strong>{{ d.counts.bookings }}</strong></div>
+        <div class="tile"><span>Orders</span><strong>{{ d.counts.orders }}</strong></div>
+        <div class="tile"><span>Services / products</span><strong>{{ d.counts.services }} / {{ d.counts.products }}</strong></div>
+        <div class="tile tile--hi"><span>Deposits received</span><strong>{{ naira(d.deposits.total) }}</strong><small>{{ d.deposits.count }} payments</small></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel__title">Account</h2>
+        <dl class="kv">
+          <dt>Status</dt><dd><span class="pill" [attr.data-s]="d.business.status">{{ d.business.status }}</span> <span class="muted" *ngIf="d.business.suspendedReason">{{ d.business.suspendedReason }}</span></dd>
+          <dt>Plan</dt><dd>{{ d.business.plan | titlecase }}<span class="muted" *ngIf="d.business.plan !== 'free'"> until {{ date(d.business.planExpiresAt) }}</span></dd>
+          <dt>Owner phone</dt><dd>{{ d.business.owner?.phone || '-' }}</dd>
+          <dt>Owner email</dt><dd>{{ d.business.owner?.email || '-' }} <span class="muted" *ngIf="d.business.owner?.email">({{ d.business.owner?.emailVerified ? 'verified' : 'not verified' }})</span></dd>
+          <dt>WhatsApp</dt><dd>{{ d.business.whatsappNumber || '-' }}</dd>
+          <dt>Delivery</dt><dd>{{ d.business.delivery.enabled ? 'On, ' + d.business.delivery.zones + ' areas' : 'Off' }}</dd>
+          <dt>Joined</dt><dd>{{ date(d.business.createdAt) }}</dd>
+          <dt>Last login</dt><dd>{{ date(d.business.owner?.lastLoginAt) }}</dd>
+        </dl>
+        <p class="muted">To change the plan or suspend this business, use the list on the Admin page.</p>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel__title">Plan payments</h2>
+        <p class="empty" *ngIf="!d.subscriptions.length">None yet.</p>
+        <div class="table-wrap" *ngIf="d.subscriptions.length">
+          <table>
+            <thead><tr><th>Date</th><th>Plan</th><th>Status</th><th>Runs to</th><th class="num">Amount</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let s of d.subscriptions; trackBy: trackId">
+                <td>{{ date(s.createdAt) }}</td>
+                <td>{{ s.plan | titlecase }} {{ s.period }}</td>
+                <td><span class="pill" [attr.data-s]="s.status">{{ label(s.status) }}</span></td>
+                <td>{{ date(s.endsAt) }}</td>
+                <td class="num">{{ naira(s.amount) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel__title">Latest bookings</h2>
+        <p class="empty" *ngIf="!d.recentBookings.length">None yet.</p>
+        <div class="table-wrap" *ngIf="d.recentBookings.length">
+          <table>
+            <thead><tr><th>When</th><th>Service</th><th>Customer</th><th>Status</th><th>Payment</th><th class="num">Price</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let b of d.recentBookings; trackBy: trackId">
+                <td>{{ dateTime(b.startAt) }}</td>
+                <td>{{ b.serviceName || '-' }}</td>
+                <td>{{ b.customerName }}</td>
+                <td><span class="pill" [attr.data-s]="b.status">{{ label(b.status) }}</span></td>
+                <td><span class="pill" [attr.data-s]="b.paymentStatus">{{ label(b.paymentStatus) }}</span></td>
+                <td class="num">{{ naira(b.price) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel__title">Latest orders</h2>
+        <p class="empty" *ngIf="!d.recentOrders.length">None yet.</p>
+        <div class="table-wrap" *ngIf="d.recentOrders.length">
+          <table>
+            <thead><tr><th>Date</th><th>Code</th><th>Customer</th><th>Type</th><th>Status</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let o of d.recentOrders; trackBy: trackId">
+                <td>{{ dateTime(o.createdAt) }}</td>
+                <td>{{ o.orderCode }}</td>
+                <td>{{ o.customerName }}</td>
+                <td>{{ o.fulfilment }}</td>
+                <td><span class="pill" [attr.data-s]="o.status">{{ label(o.status) }}</span></td>
+                <td class="num">{{ naira(o.total) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</main>

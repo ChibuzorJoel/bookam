@@ -3,9 +3,14 @@
     <header class="top">
       <div>
         <h1 class="top__title">Admin</h1>
-        <p class="top__lead">Businesses, plans and revenue across LagosPages.</p>
+        <p class="top__lead">Businesses, plans and revenue across Bookam.</p>
       </div>
-      <button type="button" class="btn btn--dark btn--sm" (click)="logout()">Log out</button>
+      <div class="top__actions">
+        <a class="btn btn--ghost btn--sm" routerLink="/admin/payments"><i class="fa-solid fa-naira-sign" aria-hidden="true"></i> Payments</a>
+        <a class="btn btn--ghost btn--sm" routerLink="/admin/support"><i class="fa-solid fa-inbox" aria-hidden="true"></i> Support</a>
+        <a class="btn btn--ghost btn--sm" routerLink="/admin/assistant"><i class="fa-solid fa-comment-dots" aria-hidden="true"></i> Assistant</a>
+        <button type="button" class="btn btn--dark btn--sm" (click)="logout()">Log out</button>
+      </div>
     </header>
 
     <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
@@ -58,8 +63,8 @@
       <li class="rec" *ngFor="let b of rows; trackBy: trackById">
         <div class="rec__head">
           <div>
-            <strong class="rec__name">{{ b.name }}</strong>
-            <span class="rec__sub">lagospages.ng/{{ b.slug }} &middot; {{ b.mode }}</span>
+            <a class="rec__name rec__link" [routerLink]="['/admin/businesses', b._id]"><strong>{{ b.name }}</strong></a>
+            <span class="rec__sub">bookam.ng/{{ b.slug }} &middot; {{ b.mode }}</span>
           </div>
           <span class="status" [attr.data-s]="b.status">{{ b.status }}</span>
         </div>

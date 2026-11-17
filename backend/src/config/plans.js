@@ -10,7 +10,7 @@ const PLANS = {
     name: 'Starter',
     priceKobo: 400000, // ₦4,000
     maxProducts: Infinity,
-    features: { booking: true, deposits: true, removeBadge: true, customDomain: false, reminders: false, analytics: false, delivery: true },
+    features: { booking: true, deposits: true, removeBadge: true, customDomain: false, reminders: false, analytics: false, delivery: false },
   },
   pro: {
     name: 'Pro',

@@ -8,11 +8,14 @@ import { AppComponent } from './app.component';
 import { HomeComponent } from './pages/home/home.component';
 import { HeaderComponent } from './layout/header/header.component';
 import { FooterComponent } from './layout/footer/footer.component';
+import { AssistantComponent } from './pages/assistant/assistant.component';
 import { authInterceptor } from './core/auth.interceptor';
+
+
 
 @NgModule({
   declarations: [AppComponent, HomeComponent, HeaderComponent, FooterComponent],
-  imports: [BrowserModule, AppRoutingModule, ReactiveFormsModule],
+  imports: [BrowserModule, AppRoutingModule, ReactiveFormsModule, AssistantComponent],
   providers: [provideHttpClient(withInterceptors([authInterceptor]))],
   bootstrap: [AppComponent],
 })

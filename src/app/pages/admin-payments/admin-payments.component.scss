@@ -1,0 +1,341 @@
+/* Shared by the admin sub-pages (payments, business, support, assistant). Use with: @use '../admin-shared' as *; */
+$green-800: #08302d;
+$green-600: #0e7c3f;
+$gold-500: #ffc21a;
+$gold-400: #ffd45c;
+$paper: #f8f7f1;
+$tint: #efeee4;
+$white: #fff;
+$ink: #0b2b28;
+$muted: #4a625f;
+$line: rgba(8, 48, 45, 0.12);
+$danger: #b42318;
+$ease: cubic-bezier(0.22, 1, 0.36, 1);
+$font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-system, Arial, sans-serif;
+
+@mixin up($bp) {
+  @media (min-width: $bp) {
+    @content;
+  }
+}
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: $paper;
+  color: $ink;
+  font-family: $font;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+.wrap {
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 64px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.top {
+  margin-bottom: 20px;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: $green-600;
+  font-weight: 800;
+  text-decoration: none;
+}
+.top__title {
+  margin: 0;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.top__lead {
+  margin: 4px 0 0;
+  color: $muted;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 70;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: $green-800;
+  color: $gold-500;
+  font-weight: 700;
+}
+
+.stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 20px;
+  @include up(760px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px;
+  border: 1px solid $line;
+  border-radius: 18px;
+  background: $white;
+
+  span {
+    color: $muted;
+    font-size: 0.85rem;
+  }
+  strong {
+    font-size: 1.7rem;
+    letter-spacing: -0.02em;
+    color: $green-800;
+  }
+  small {
+    color: $muted;
+    font-size: 0.78rem;
+  }
+}
+.tile--warn {
+  border-color: #f0c36d;
+  background: #fff8e5;
+}
+
+.panel {
+  margin-bottom: 20px;
+  padding: 20px 18px;
+  border: 1px solid $line;
+  border-radius: 22px;
+  background: $white;
+}
+.panel__title {
+  margin: 0 0 6px;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.panel__hint {
+  margin: 0 0 14px;
+  color: $muted;
+}
+.empty {
+  margin: 10px 0 0;
+  color: $muted;
+}
+
+.gap,
+.entry {
+  padding: 16px 0;
+  border-top: 1px solid $line;
+}
+.gap__q {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  margin-bottom: 8px;
+}
+.count {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: $gold-500;
+  color: $green-800;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.entry {
+  h3 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+  p {
+    margin: 0 0 10px;
+    color: $muted;
+    white-space: pre-line;
+  }
+}
+.entry.is-off h3,
+.entry.is-off p {
+  opacity: 0.55;
+}
+.off-tag {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: $tint;
+  font-size: 0.7rem;
+}
+
+.form {
+  display: grid;
+  gap: 8px;
+  label {
+    font-weight: 700;
+  }
+}
+input,
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid $line;
+  border-radius: 14px;
+  background: $paper;
+  font: inherit;
+  font-size: 16px;
+  color: $ink;
+  &:focus {
+    outline: 3px solid rgba(14, 124, 63, 0.3);
+    border-color: $green-600;
+  }
+}
+textarea {
+  resize: vertical;
+  min-height: 84px;
+}
+.search {
+  margin-bottom: 8px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s $ease, background-color 0.2s ease;
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  &:focus-visible {
+    outline: 3px solid $green-600;
+    outline-offset: 2px;
+  }
+}
+.btn--sm {
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 0.92rem;
+}
+.btn--primary {
+  background: $gold-500;
+  color: $green-800;
+  &:hover:not(:disabled) {
+    background: $gold-400;
+  }
+}
+.btn--dark {
+  background: $green-800;
+  color: $white;
+}
+.btn--ghost {
+  background: transparent;
+  border-color: $line;
+  color: $green-800;
+}
+.btn--danger {
+  background: transparent;
+  border-color: rgba(180, 35, 24, 0.35);
+  color: $danger;
+}
+
+.msg {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+.msg--error {
+  background: #fdecea;
+  color: $danger;
+}
+
+.skeleton {
+  display: grid;
+  gap: 12px;
+  span {
+    height: 120px;
+    border-radius: 18px;
+    background: linear-gradient(90deg, $tint, #f6f5ee, $tint);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite linear;
+  }
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+
+/* ---------- Extras for the other admin pages ---------- */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.tab {
+  min-height: 44px; padding: 0 18px; border: 1.5px solid $line; border-radius: 999px; background: $white;
+  font: inherit; font-weight: 800; color: $green-800; cursor: pointer;
+  &.is-active { background: $green-800; border-color: $green-800; color: $white; }
+  &:focus-visible { outline: 3px solid $green-600; outline-offset: 2px; }
+}
+.filters { display: grid; gap: 8px; grid-template-columns: 1fr; margin-bottom: 14px; @include up(760px) { grid-template-columns: 2fr 1fr 1fr 1fr auto; align-items: end; } }
+.filters label { display: grid; gap: 4px; font-size: 0.82rem; font-weight: 700; color: $muted; }
+select { width: 100%; padding: 12px 14px; border: 1.5px solid $line; border-radius: 14px; background: $paper; font: inherit; font-size: 16px; color: $ink; }
+.table-wrap { overflow-x: auto; margin: 0 -6px; padding: 0 6px; }
+table { width: 100%; min-width: 640px; border-collapse: collapse; }
+th, td { padding: 12px 10px; border-bottom: 1px solid $line; text-align: left; vertical-align: top; }
+th { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: $muted; }
+td.num, th.num { text-align: right; white-space: nowrap; }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 999px; background: $tint; font-size: 0.75rem; font-weight: 800; text-transform: capitalize; }
+.pill[data-s='success'], .pill[data-s='active'], .pill[data-s='replied'], .pill[data-s='paid'], .pill[data-s='completed'], .pill[data-s='delivered'], .pill[data-s='confirmed'] { background: #dff3e6; color: #0b5f31; }
+.pill[data-s='failed'], .pill[data-s='amount_mismatch'], .pill[data-s='suspended'], .pill[data-s='cancelled'], .pill[data-s='open'] { background: #fdecea; color: $danger; }
+.pill[data-s='pending'], .pill[data-s='abandoned'], .pill[data-s='expired'], .pill[data-s='new'] { background: #fff1c7; color: #7a5a00; }
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.muted { color: $muted; }
+.link { color: $green-600; font-weight: 800; text-decoration: none; &:hover { text-decoration: underline; } }
+.cards { display: grid; gap: 10px; @include up(760px) { display: none; } }
+.card { padding: 14px; border: 1px solid $line; border-radius: 16px; background: $white; display: grid; gap: 4px; }
+.only-wide { display: none; @include up(760px) { display: block; } }
+.kv { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; margin: 0; dt { color: $muted; } dd { margin: 0; overflow-wrap: anywhere; } }
+.top__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

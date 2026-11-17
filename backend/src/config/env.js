@@ -48,6 +48,11 @@ const schema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: z.string().default(''),
   WHATSAPP_TEMPLATE_LANG: z.string().default('en'),
 
+  ASSISTANT_ENABLED: bool('true'),
+  ANTHROPIC_API_KEY: z.string().default(''),
+  ASSISTANT_MODEL: z.string().default('claude-haiku-5-5'),
+  ASSISTANT_DAILY_MESSAGE_CAP: z.coerce.number().int().min(0).default(500), // hard stop per day; protects your bill
+
   CLOUDINARY_CLOUD_NAME: z.string().default(''),
   CLOUDINARY_API_KEY: z.string().default(''),
   CLOUDINARY_API_SECRET: z.string().default(''),

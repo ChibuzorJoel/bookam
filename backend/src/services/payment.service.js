@@ -132,7 +132,7 @@ async function startSubscriptionPayment({ business, plan, period = 'monthly', du
         email: emailFor(email, phone),
         name: business.name,
         phone,
-        billerName: 'LagosPages',
+        billerName: 'Bookam',
         details: { type: 'subscription', plan, period },
       }),
     };

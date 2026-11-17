@@ -9,8 +9,8 @@ import {
   OnInit,
   PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
-import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
@@ -20,8 +20,8 @@ interface NavLink {
 }
 
 /**
- * Public site header for LagosPages.
- * Standalone: add HeaderComponent to the `imports` array of the component or module that uses <app-header>.
+ * Public site header for Bookam.
+ * Declared in AppModule (not standalone); it uses CommonModule and RouterModule through that module.
  */
 @Component({
   selector: 'app-header',
@@ -30,7 +30,7 @@ interface NavLink {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent implements OnInit, OnDestroy {
-  @Input() brand = 'LagosPages';
+  @Input() brand = 'Bookam';
   /** Set true when the user has a session, to show "Go to dashboard" instead of Log in / Start free. */
   @Input() loggedIn = false;
 

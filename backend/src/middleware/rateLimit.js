@@ -21,6 +21,8 @@ module.exports = {
   loginLimiter: make(15, 15, 'Too many login attempts. Please try again later.', phoneKey),
   changePasswordLimiter: make(15, 8, 'Too many attempts. Please try again in a few minutes.', userKey),
   emailCodeLimiter: make(15, 8, 'Too many attempts. Please try again in a few minutes.', userKey),
+  assistantLimiter: make(10, 20, 'You are sending messages very quickly. Please wait a few minutes.'),
+  supportLimiter: make(60, 5, 'You have sent several messages already. Please wait a while before sending another.'),
   publicWriteLimiter: make(10, 20, 'Too many requests. Please try again shortly.'),
   webhookLimiter: make(1, 600, 'Too many requests.'),
 };

@@ -1,0 +1,55 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <a class="back" routerLink="/admin"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Admin</a>
+        <h1 class="top__title">Support</h1>
+        <p class="top__lead">People who asked for a human from the website chat. Reply on WhatsApp or email, then mark it done.</p>
+      </div>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <div class="tabs" role="group" aria-label="Filter messages">
+      <button type="button" class="tab" *ngFor="let t of tabs" [class.is-active]="filter === t.value" [attr.aria-pressed]="filter === t.value" (click)="setFilter(t.value)">
+        {{ t.label }}<ng-container *ngIf="t.value === 'open' && data"> ({{ data.openCount }})</ng-container>
+      </button>
+    </div>
+
+    <div class="msg msg--error" role="alert" *ngIf="error"><p>{{ error }}</p><button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button></div>
+    <div class="skeleton" *ngIf="loading" aria-busy="true"><span></span></div>
+
+    <ng-container *ngIf="data && !loading">
+      <p class="empty" *ngIf="!data.messages.length">Nothing here.</p>
+
+      <article class="panel" *ngFor="let m of data.messages; trackBy: trackId">
+        <div class="head">
+          <div>
+            <strong>{{ m.name }}</strong>
+            <span class="pill" [attr.data-s]="m.status">{{ m.status }}</span>
+            <div class="muted">{{ m.contact }} &middot; {{ date(m.createdAt) }}<span *ngIf="m.page"> &middot; from {{ m.page }}</span></div>
+          </div>
+          <a *ngIf="reachLink(m.contact) as r" class="btn btn--ghost btn--sm" [href]="r.href" target="_blank" rel="noopener">
+            <i class="fa-solid" [ngClass]="r.label === 'Email' ? 'fa-envelope' : 'fa-comment'" aria-hidden="true"></i> {{ r.label }}
+          </a>
+        </div>
+        <p class="body">{{ m.message }}</p>
+
+        <label class="sr-only" [for]="'note-' + m._id">Private note</label>
+        <textarea [id]="'note-' + m._id" [name]="'note-' + m._id" rows="2" maxlength="1000" placeholder="Private note (only you see this)" [(ngModel)]="notes[m._id]"></textarea>
+        <div class="row">
+          <button type="button" class="btn btn--primary btn--sm" *ngIf="m.status !== 'replied'" [disabled]="busyId === m._id" (click)="mark(m, 'replied')">Mark replied</button>
+          <button type="button" class="btn btn--ghost btn--sm" *ngIf="m.status !== 'closed'" [disabled]="busyId === m._id" (click)="mark(m, 'closed')">Close</button>
+          <button type="button" class="btn btn--ghost btn--sm" *ngIf="m.status !== 'open'" [disabled]="busyId === m._id" (click)="mark(m, 'open')">Reopen</button>
+          <button type="button" class="btn btn--ghost btn--sm" [disabled]="busyId === m._id" (click)="saveNote(m)">Save note</button>
+        </div>
+      </article>
+
+      <div class="pager" *ngIf="data.meta.pages > 1">
+        <button type="button" class="btn btn--ghost btn--sm" [disabled]="page <= 1" (click)="go(-1)">Previous</button>
+        <span class="muted">Page {{ data.meta.page }} of {{ data.meta.pages }}</span>
+        <button type="button" class="btn btn--ghost btn--sm" [disabled]="page >= data.meta.pages" (click)="go(1)">Next</button>
+      </div>
+    </ng-container>
+  </div>
+</main>

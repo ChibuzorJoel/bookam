@@ -66,7 +66,7 @@ exports.getDelivery = asyncHandler(async (req, res) => {
 
 // PUT /me/delivery   (replaces the whole delivery setup: on/off, pickup on/off, and the zone fees)
 exports.putDelivery = asyncHandler(async (req, res) => {
-  assertFeature(req.business, 'delivery', 'Delivery is available on the Starter plan and above.');
+  assertFeature(req.business, 'delivery', 'Delivery is available on the Pro plan.');
   const { enabled, allowPickup, zones } = req.body;
   // Keep each zone's id when the name is unchanged, so open checkouts do not break.
   const existing = new Map((req.business.delivery?.zones || []).map((z) => [z.name.toLowerCase(), z._id]));

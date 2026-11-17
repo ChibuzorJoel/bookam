@@ -3,9 +3,13 @@ const router = require('express').Router();
 const c = require('../controllers/public.controller');
 const v = require('../validators');
 const validate = require('../middleware/validate');
-const { publicWriteLimiter } = require('../middleware/rateLimit');
+const { publicWriteLimiter, assistantLimiter, supportLimiter } = require('../middleware/rateLimit');
+const extra = require('../controllers/adminExtra.controller');
+const assistant = require('../controllers/assistant.controller');
 
 // Static paths first so "bookings" and "by-domain" are never mistaken for a business slug.
+router.post('/support', supportLimiter, validate(v.supportCreate), extra.createSupport);
+router.post('/assistant', assistantLimiter, validate(v.assistantChat), assistant.chat);
 router.get('/by-domain', validate(v.domainQuery, 'query'), c.getByDomain);
 router.get('/bookings/:code', validate(v.codeParam, 'params'), c.getBookingByCode);
 router.get('/orders/:code', validate(v.codeParam, 'params'), c.getOrderByCode);

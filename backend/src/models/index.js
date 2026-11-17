@@ -10,4 +10,8 @@ module.exports = {
   Payment: require('./Payment'),
   Subscription: require('./Subscription'),
   Notification: require('./Notification'),
+  KnowledgeEntry: require('./KnowledgeEntry'),
+  AssistantGap: require('./AssistantGap'),
+  AssistantUsage: require('./AssistantUsage'),
+  SupportMessage: require('./SupportMessage'),
 };

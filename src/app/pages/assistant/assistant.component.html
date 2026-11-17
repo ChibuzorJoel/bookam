@@ -1,0 +1,67 @@
+<ng-container *ngIf="visible">
+  <section *ngIf="open" class="chat" role="dialog" aria-label="Bookam assistant" aria-modal="false">
+    <header class="chat__head">
+      <div class="chat__who">
+        <span class="chat__avatar" aria-hidden="true"><i class="fa-solid fa-comment-dots"></i></span>
+        <div>
+          <strong>Bookam assistant</strong>
+          <small>AI helper. Ask about plans, deposits, delivery.</small>
+        </div>
+      </div>
+      <button type="button" class="chat__close" (click)="toggle()" aria-label="Close chat"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </header>
+
+    <div class="human" *ngIf="human">
+      <ng-container *ngIf="!humanDone; else sent">
+        <h3>Talk to a person</h3>
+        <p>Leave your details and we will reply by phone, WhatsApp or email.</p>
+        <form (submit)="$event.preventDefault(); sendHuman()">
+          <label for="h-name">Your name</label>
+          <input id="h-name" name="hname" type="text" autocomplete="name" maxlength="80" [(ngModel)]="form.name" />
+          <label for="h-contact">Phone number or email</label>
+          <input id="h-contact" name="hcontact" type="text" autocomplete="tel" maxlength="120" [(ngModel)]="form.contact" />
+          <label for="h-msg">How can we help?</label>
+          <textarea id="h-msg" name="hmsg" rows="3" maxlength="1500" [(ngModel)]="form.message"></textarea>
+          <p class="chat__error" role="alert" *ngIf="humanError">{{ humanError }}</p>
+          <div class="human__row">
+            <button type="submit" class="chip" [disabled]="humanBusy">{{ humanBusy ? 'Sending...' : 'Send message' }}</button>
+            <button type="button" class="chip chip--ghost" (click)="closeHuman()">Back to chat</button>
+          </div>
+        </form>
+      </ng-container>
+      <ng-template #sent>
+        <h3><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Message sent</h3>
+        <p>Thank you. A person will get back to you soon.</p>
+        <button type="button" class="chip chip--ghost" (click)="closeHuman()">Back to chat</button>
+      </ng-template>
+    </div>
+
+    <div #log class="chat__log" *ngIf="!human" role="log" aria-live="polite" aria-relevant="additions">
+      <div *ngFor="let b of bubbles; trackBy: trackIndex" class="msg" [class.msg--me]="b.role === 'user'">
+        <p class="msg__text">{{ b.content }}</p>
+        <div class="msg__links" *ngIf="b.links?.length">
+          <button type="button" class="chip" *ngFor="let l of b.links" (click)="go(l)">{{ l.label }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+        </div>
+      </div>
+
+      <div class="msg msg--typing" *ngIf="busy" aria-label="The assistant is typing"><span></span><span></span><span></span></div>
+      <p class="chat__error" role="alert" *ngIf="error">{{ error }}</p>
+
+      <div class="chat__suggest" *ngIf="showSuggestions">
+        <button type="button" class="chip chip--ghost" *ngFor="let s of suggestions" (click)="ask(s)">{{ s }}</button>
+      </div>
+    </div>
+
+    <form class="chat__form" *ngIf="!human" (submit)="$event.preventDefault(); send()">
+      <label class="sr-only" for="assistant-input">Your question</label>
+      <input #input id="assistant-input" name="q" type="text" autocomplete="off" enterkeyhint="send" placeholder="Type your question" [(ngModel)]="draft" [maxLength]="maxLen" />
+      <button type="submit" class="chat__send" [disabled]="!canSend" aria-label="Send"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
+    </form>
+    <p class="chat__note" *ngIf="!human">AI can make mistakes. For payments or refunds, <button type="button" class="linkbtn" (click)="openHuman()">talk to a person</button>.</p>
+  </section>
+
+  <button type="button" class="fab" (click)="toggle()" [attr.aria-expanded]="open" [attr.aria-label]="open ? 'Close assistant' : 'Ask the Bookam assistant'">
+    <i class="fa-solid" [ngClass]="open ? 'fa-xmark' : 'fa-comment-dots'" aria-hidden="true"></i>
+    <span class="fab__label" *ngIf="!open">Ask us</span>
+  </button>
+</ng-container>

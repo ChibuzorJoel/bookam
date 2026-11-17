@@ -1,4 +1,4 @@
-/* LagosPages admin | admin.component.scss */
+/* Bookam admin | admin.component.scss */
 
 $green-900: #062421;
 $green-800: #08302d;
@@ -455,3 +455,8 @@ select.input { appearance: auto; }
 .status[data-s='suspended'] { background: rgba(180, 35, 24, 0.1); color: $danger; }
 .edit { margin-top: 14px; padding-top: 14px; border-top: 1px solid $line; }
 .inline { display: flex; align-items: center; gap: 10px; .input { flex: 1; min-width: 0; } }
+
+.top__actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+a.btn { text-decoration: none; }
+
+.rec__link { color: inherit; text-decoration: none; &:hover strong { text-decoration: underline; } }

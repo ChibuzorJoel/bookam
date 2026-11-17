@@ -1,0 +1,82 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <a class="back" routerLink="/admin"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Admin</a>
+        <h1 class="top__title">Payments</h1>
+        <p class="top__lead">Plan payments from owners and deposits paid by customers.</p>
+      </div>
+      <div class="top__actions">
+        <button type="button" class="btn btn--dark btn--sm" [disabled]="exporting || !data?.payments?.length" (click)="download()"><i class="fa-solid fa-download" aria-hidden="true"></i> {{ exporting ? 'Preparing...' : 'Download CSV' }}</button>
+      </div>
+    </header>
+
+    <div class="tabs" role="group" aria-label="Payment type">
+      <button type="button" class="tab" [class.is-active]="kind === 'subscription'" [attr.aria-pressed]="kind === 'subscription'" (click)="setKind('subscription')">Plan payments</button>
+      <button type="button" class="tab" [class.is-active]="kind === 'deposit'" [attr.aria-pressed]="kind === 'deposit'" (click)="setKind('deposit')">Customer deposits</button>
+    </div>
+
+    <section class="stats" *ngIf="data" aria-label="Totals for this filter">
+      <div class="tile tile--hi"><span>{{ kind === 'deposit' ? 'Paid in' : 'Plan revenue' }}</span><strong>{{ naira(data.totals.amount) }}</strong><small>{{ data.totals.count }} successful</small></div>
+      <div class="tile" *ngIf="kind === 'deposit'"><span>Provider fees</span><strong>{{ naira(data.totals.fees) }}</strong></div>
+      <div class="tile"><span>Rows</span><strong>{{ data.meta.total }}</strong><small>matching your filters</small></div>
+    </section>
+
+    <form class="filters" (submit)="$event.preventDefault(); search()">
+      <label>Business or reference<input name="q" type="search" placeholder="Search" [(ngModel)]="q" /></label>
+      <label>Status
+        <select name="status" [(ngModel)]="status">
+          <option value="">All</option>
+          <option *ngFor="let s of statuses" [value]="s">{{ label(s) | titlecase }}</option>
+        </select>
+      </label>
+      <label>From<input name="from" type="date" [(ngModel)]="from" /></label>
+      <label>To<input name="to" type="date" [(ngModel)]="to" /></label>
+      <button type="submit" class="btn btn--primary btn--sm">Filter</button>
+    </form>
+
+    <div class="msg msg--error" role="alert" *ngIf="error"><p>{{ error }}</p><button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button></div>
+    <div class="skeleton" *ngIf="loading" aria-busy="true"><span></span></div>
+
+    <section class="panel" *ngIf="data && !loading">
+      <p class="empty" *ngIf="!data.payments.length">No payments match.</p>
+
+      <div class="cards">
+        <article class="card" *ngFor="let p of data.payments; trackBy: trackId">
+          <div><strong>{{ naira(p.amount) }}</strong> <span class="pill" [attr.data-s]="p.status">{{ label(p.status) }}</span></div>
+          <a *ngIf="p.business" class="link" [routerLink]="['/admin/businesses', p.business.id]">{{ p.business.name }}</a>
+          <span class="muted" *ngIf="p.plan">{{ p.plan | titlecase }} &middot; {{ p.period }}</span>
+          <span class="muted">{{ date(p.createdAt) }} &middot; {{ p.provider }}</span>
+          <span class="muted">{{ p.reference }}</span>
+        </article>
+      </div>
+
+      <div class="table-wrap only-wide" *ngIf="data.payments.length">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Business</th><th>{{ kind === 'deposit' ? 'Provider' : 'Plan' }}</th><th>Status</th><th class="num">Amount</th><th *ngIf="kind === 'deposit'" class="num">Fee</th><th>Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of data.payments; trackBy: trackId">
+              <td>{{ date(p.createdAt) }}</td>
+              <td><a *ngIf="p.business; else none" class="link" [routerLink]="['/admin/businesses', p.business.id]">{{ p.business.name }}</a><ng-template #none>-</ng-template></td>
+              <td>{{ kind === 'deposit' ? p.provider : (p.plan | titlecase) + ' ' + p.period }}</td>
+              <td><span class="pill" [attr.data-s]="p.status">{{ label(p.status) }}</span></td>
+              <td class="num">{{ naira(p.amount) }}</td>
+              <td *ngIf="kind === 'deposit'" class="num">{{ naira(p.fee) }}</td>
+              <td class="muted">{{ p.reference }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pager" *ngIf="data.meta.pages > 1">
+        <button type="button" class="btn btn--ghost btn--sm" [disabled]="page <= 1" (click)="go(-1)">Previous</button>
+        <span class="muted">Page {{ data.meta.page }} of {{ data.meta.pages }}</span>
+        <button type="button" class="btn btn--ghost btn--sm" [disabled]="page >= data.meta.pages" (click)="go(1)">Next</button>
+      </div>
+    </section>
+  </div>
+</main>

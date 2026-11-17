@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Meta, Title } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, finalize } from 'rxjs/operators';
@@ -16,7 +16,7 @@ const PAGE = 20;
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './admin.component.html',
   styleUrls: ['./admin.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,7 +80,7 @@ export class AdminComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.title.setTitle('Admin | LagosPages');
+    this.title.setTitle('Admin | Bookam');
     this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
     if (!this.isBrowser) {
       return;

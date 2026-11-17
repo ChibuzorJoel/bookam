@@ -1,0 +1,91 @@
+<main id="main" tabindex="-1" class="set">
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <a class="back" routerLink="/admin"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Admin</a>
+        <h1 class="top__title">Assistant</h1>
+        <p class="top__lead">Teach the website assistant. It answers only from the answers below and your plan settings.</p>
+      </div>
+    </header>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+
+    <div class="msg msg--error" role="alert" *ngIf="loadError">
+      <p>{{ loadError }}</p>
+      <button type="button" class="btn btn--dark btn--sm" (click)="load()">Try again</button>
+    </div>
+    <div class="skeleton" *ngIf="loading" aria-busy="true"><span></span><span></span></div>
+
+    <ng-container *ngIf="!loading && !loadError">
+      <section class="stats" aria-label="Assistant status">
+        <div class="tile" [class.tile--warn]="usage && !usage.configured">
+          <span>Status</span>
+          <strong>{{ usage?.configured ? 'On' : 'Off' }}</strong>
+          <small *ngIf="usage && !usage.configured">Add ANTHROPIC_API_KEY on the server to switch it on.</small>
+          <small *ngIf="usage?.configured">Model {{ usage?.model }}</small>
+        </div>
+        <div class="tile"><span>Chats today</span><strong>{{ todayCount }}</strong><small>Daily limit {{ usage?.dailyCap }}</small></div>
+        <div class="tile"><span>Need an answer</span><strong>{{ gaps.length }}</strong><small>questions it could not answer</small></div>
+        <div class="tile"><span>Answers it knows</span><strong>{{ entries.length }}</strong></div>
+      </section>
+
+      <section class="panel" aria-labelledby="as-gaps">
+        <h2 id="as-gaps" class="panel__title">Needs an answer</h2>
+        <p class="panel__hint">Visitors asked these and the assistant was not sure. Write the answer once and it will know it from now on.</p>
+        <p class="empty" *ngIf="!gaps.length">Nothing waiting. Good.</p>
+        <article class="gap" *ngFor="let g of gaps; trackBy: trackId">
+          <div class="gap__q"><strong>{{ g.question }}</strong><span class="count" *ngIf="g.count > 1">asked {{ g.count }} times</span></div>
+          <label class="sr-only" [for]="'gap-' + g._id">Answer</label>
+          <textarea [id]="'gap-' + g._id" rows="3" maxlength="1500" placeholder="Write the answer in simple words" [(ngModel)]="gapAnswers[g._id]" [name]="'gap-' + g._id"></textarea>
+          <div class="row">
+            <button type="button" class="btn btn--primary btn--sm" [disabled]="busyId === g._id || (gapAnswers[g._id] || '').trim().length < 3" (click)="answerGap(g)">Save answer</button>
+            <button type="button" class="btn btn--ghost btn--sm" [disabled]="busyId === g._id" (click)="ignoreGap(g)">Ignore</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel" aria-labelledby="as-add">
+        <h2 id="as-add" class="panel__title">Add an answer</h2>
+        <form class="form" (submit)="$event.preventDefault(); add()">
+          <label for="add-q">Question</label>
+          <input id="add-q" name="addq" type="text" maxlength="200" placeholder="For example: Can I sell food?" [(ngModel)]="adding.question" />
+          <label for="add-a">Answer</label>
+          <textarea id="add-a" name="adda" rows="4" maxlength="1500" placeholder="Short and true. The assistant will say this in its own words." [(ngModel)]="adding.answer"></textarea>
+          <p class="msg msg--error" role="alert" *ngIf="addError">{{ addError }}</p>
+          <button type="submit" class="btn btn--primary btn--sm" [disabled]="busyId === 'new'">Add answer</button>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="as-list">
+        <h2 id="as-list" class="panel__title">What it knows</h2>
+        <label class="sr-only" for="as-filter">Search answers</label>
+        <input id="as-filter" class="search" name="filter" type="search" placeholder="Search answers" [(ngModel)]="filter" />
+        <article class="entry" *ngFor="let e of shown; trackBy: trackId" [class.is-off]="!e.active">
+          <ng-container *ngIf="editingId !== e._id; else editing">
+            <h3>{{ e.question }} <span class="off-tag" *ngIf="!e.active">Off</span></h3>
+            <p>{{ e.answer }}</p>
+            <div class="row">
+              <button type="button" class="btn btn--ghost btn--sm" (click)="startEdit(e)"><i class="fa-solid fa-pen" aria-hidden="true"></i> Edit</button>
+              <button type="button" class="btn btn--ghost btn--sm" [disabled]="busyId === e._id" (click)="toggle(e)">{{ e.active ? 'Turn off' : 'Turn on' }}</button>
+              <button type="button" class="btn btn--danger btn--sm" [disabled]="busyId === e._id" (click)="remove(e)"><i class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+            </div>
+          </ng-container>
+          <ng-template #editing>
+            <div class="form">
+              <label [for]="'eq-' + e._id">Question</label>
+              <input [id]="'eq-' + e._id" [name]="'eq-' + e._id" type="text" maxlength="200" [(ngModel)]="edit.question" />
+              <label [for]="'ea-' + e._id">Answer</label>
+              <textarea [id]="'ea-' + e._id" [name]="'ea-' + e._id" rows="4" maxlength="1500" [(ngModel)]="edit.answer"></textarea>
+              <p class="msg msg--error" role="alert" *ngIf="editError">{{ editError }}</p>
+              <div class="row">
+                <button type="button" class="btn btn--primary btn--sm" [disabled]="busyId === e._id" (click)="saveEdit(e)">Save</button>
+                <button type="button" class="btn btn--ghost btn--sm" (click)="cancelEdit()">Cancel</button>
+              </div>
+            </div>
+          </ng-template>
+        </article>
+        <p class="empty" *ngIf="!shown.length">No answers match.</p>
+      </section>
+    </ng-container>
+  </div>
+</main>

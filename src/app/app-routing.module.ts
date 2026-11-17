@@ -32,6 +32,11 @@ const routes: Routes = [
   /* ---------- Platform admin ---------- */
   { path: 'admin', canActivate: [adminGuard], loadComponent: () => import('./pages/admin/admin.component').then((m) => m.AdminComponent) },
 
+  { path: 'admin/payments', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-payments/admin-payments.component').then((m) => m.AdminPaymentsComponent) },
+  { path: 'admin/support', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-support/admin-support.component').then((m) => m.AdminSupportComponent) },
+  { path: 'admin/businesses/:id', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-business/admin-business.component').then((m) => m.AdminBusinessComponent) },
+  { path: 'admin/assistant', canActivate: [adminGuard], loadComponent: () => import('./pages/admin-assistant/admin-assistant.component').then((m) => m.AdminAssistantComponent) },
+
   /* ---------- Public business pages (keep these last) ---------- */
   { path: ':slug/order/:code', loadComponent: () => import('./pages/order/order.component').then((m) => m.OrderComponent) },
   { path: ':slug/booking/:code', loadComponent: () => import('./pages/booking-confirmation/booking-confirmation.component').then((m) => m.BookingConfirmationComponent) },

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   LagosPages header  |  header.component.scss
+   Bookam header  |  header.component.scss
    Self-contained: carries its own tokens, buttons and wrapper.
    ========================================================================== */
 
@@ -53,7 +53,7 @@ button {
   color: inherit;
 }
 
-svg {
+img {
   display: block;
 }
 
@@ -220,6 +220,7 @@ svg {
   width: 36px;
   height: 36px;
   flex: none;
+  border-radius: 10px;
   transition: transform 0.4s $ease;
 }
 
