@@ -4,4 +4,4 @@ Disallow: /dashboard
 Disallow: /admin
 Disallow: /login
 
-Sitemap: https://lagospages.ng/sitemap.xml
+Sitemap: https://bookam.ng/sitemap.xml

@@ -14,7 +14,7 @@ interface FooterLink {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FooterComponent {
-  @Input() brand = 'LagosPages';
+  @Input() brand = 'Bookam';
   @Input() about = 'Booking and shop pages for Lagos businesses. Share one link and get paid.';
 
   readonly year = new Date().getFullYear();
