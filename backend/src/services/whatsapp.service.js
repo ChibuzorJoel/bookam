@@ -14,6 +14,19 @@ function waLink(phone, text) {
  * templates. Enable with WHATSAPP_CLOUD_ENABLED=true. `templateName` must match an approved template whose
  * body has {{1}} (the message text). Adjust the components to match your approved templates.
  */
+/**
+ * Meta rejects template variables that contain new lines, tabs or 4+ spaces in a row (error 132018),
+ * and our messages are multi-line. So the text is flattened to one line before it is sent.
+ */
+const oneLine = (text) =>
+  String(text ?? '')
+    .replace(/[\r\n]+/g, ' | ')
+    .replace(/\t/g, ' ')
+    .replace(/ {2,}/g, ' ')
+    .replace(/(\|\s*){2,}/g, '| ')
+    .trim()
+    .slice(0, 1000);
+
 async function sendTemplate(to, templateName, bodyParams = []) {
   const res = await fetch(`https://graph.facebook.com/v20.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: 'POST',
@@ -25,7 +38,7 @@ async function sendTemplate(to, templateName, bodyParams = []) {
       template: {
         name: templateName,
         language: { code: env.WHATSAPP_TEMPLATE_LANG },
-        components: [{ type: 'body', parameters: bodyParams.map((text) => ({ type: 'text', text })) }],
+        components: [{ type: 'body', parameters: bodyParams.map((text) => ({ type: 'text', text: oneLine(text) })) }],
       },
     }),
     signal: AbortSignal.timeout(15000),
@@ -35,4 +48,4 @@ async function sendTemplate(to, templateName, bodyParams = []) {
   return body;
 }
 
-module.exports = { waLink, sendTemplate };
+module.exports = { waLink, sendTemplate, oneLine };
