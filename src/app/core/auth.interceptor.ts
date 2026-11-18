@@ -25,7 +25,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (err instanceof HttpErrorResponse && err.status === 401 && !req.url.startsWith(`${API_URL}/auth/`)) {
         auth.clearLocal();
         const returnUrl = router.url.startsWith('/login') ? undefined : router.url;
-        router.navigate(['/login'], { queryParams: returnUrl ? { returnUrl } : {} });
+        // expired=1 makes the login page explain why the user is back there.
+        router.navigate(['/login'], { queryParams: returnUrl ? { returnUrl, expired: 1 } : { expired: 1 } });
       }
       return throwError(() => err);
     })

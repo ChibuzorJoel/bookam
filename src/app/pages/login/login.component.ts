@@ -30,7 +30,7 @@ type LoginMethod = 'password' | 'sms';
 type VerifyPurpose = 'signup' | 'login';
 type ErrorAction = 'login' | 'verify' | null;
 
-const BRAND = 'LagosPages';
+const BRAND = 'Bookam';
 const RESEND_SECONDS = 60;
 const PAID_PLANS = ['starter', 'pro'];
 
@@ -191,6 +191,10 @@ export class LoginComponent implements OnInit, OnDestroy {
       this.plan = plan && PAID_PLANS.includes(plan) ? (plan as 'starter' | 'pro') : null;
       this.period = q.get('period') === 'annual' ? 'annual' : 'monthly';
       this.returnUrl = safeReturnUrl(q.get('returnUrl'));
+      if (q.get('expired') === '1') {
+        this.notice = 'For your security, you were signed out. Please log in again.';
+        this.cdr.markForCheck();
+      }
 
       const slug = (q.get('slug') ?? '').toLowerCase().replace(/[^a-z0-9-]/g, '');
       this.wantedSlug = slug.replace(/^-+|-+$/g, '');

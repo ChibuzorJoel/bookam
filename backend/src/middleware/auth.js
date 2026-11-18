@@ -7,7 +7,7 @@ const { User, Business } = require('../models');
 const COOKIE_NAME = 'token';
 
 function signToken(user) {
-  return jwt.sign({ sub: user.id, tv: user.tokenVersion }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
+  return jwt.sign({ sub: user.id, tv: user.tokenVersion }, env.JWT_SECRET, { expiresIn: Math.round(env.SESSION_DAYS * 24 * 60 * 60) });
 }
 
 function cookieOptions() {
@@ -16,7 +16,7 @@ function cookieOptions() {
     secure: env.isProd || env.COOKIE_SAMESITE === 'none',
     sameSite: env.COOKIE_SAMESITE,
     domain: env.COOKIE_DOMAIN || undefined,
-    maxAge: env.COOKIE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000,
+    maxAge: env.SESSION_DAYS * 24 * 60 * 60 * 1000,
     path: '/',
   };
 }

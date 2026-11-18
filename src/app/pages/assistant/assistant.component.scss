@@ -41,7 +41,8 @@ $font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-sy
 }
 
 /* ---------- Floating button ---------- */
-.fab {
+/* Not named .fab: Font Awesome already owns that class (brands icons) and it breaks the icon font. */
+.launcher {
   position: fixed;
   right: 16px;
   bottom: calc(16px + env(safe-area-inset-bottom));
@@ -49,9 +50,10 @@ $font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-sy
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  min-height: 56px;
-  min-width: 56px;
-  padding: 0 20px;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  padding: 0;
   border: 0;
   border-radius: 999px;
   background: $gold-500;
@@ -435,5 +437,19 @@ $font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-sy
   &:focus-visible {
     outline: 3px solid $green-600;
     outline-offset: 2px;
+  }
+}
+
+.launcher__label {
+  display: none;
+}
+
+@include up(560px) {
+  .launcher {
+    width: auto;
+    padding: 0 22px 0 18px;
+  }
+  .launcher__label {
+    display: inline;
   }
 }

@@ -9,8 +9,8 @@ const schema = z.object({
   PORT: z.coerce.number().default(5000),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
-  JWT_EXPIRES_IN: z.string().default('7d'),
-  COOKIE_MAX_AGE_DAYS: z.coerce.number().default(7),
+  // One setting for how long a login lasts. After this many days the user must log in again (no silent renewal).
+  SESSION_DAYS: z.coerce.number().min(0.01).max(30).default(2),
   COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   COOKIE_DOMAIN: z.string().optional(),
 
