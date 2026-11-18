@@ -40,6 +40,7 @@ export interface KnowledgeGap {
 
 export interface AssistantUsage {
   configured: boolean;
+  mode: 'ai' | 'offline' | 'off';
   dailyCap: number;
   model: string;
   days: { day: string; messages: number; unanswered: number }[];

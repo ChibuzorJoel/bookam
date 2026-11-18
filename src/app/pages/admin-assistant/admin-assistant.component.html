@@ -18,11 +18,12 @@
 
     <ng-container *ngIf="!loading && !loadError">
       <section class="stats" aria-label="Assistant status">
-        <div class="tile" [class.tile--warn]="usage && !usage.configured">
+        <div class="tile" [class.tile--warn]="usage?.mode !== 'ai'">
           <span>Status</span>
-          <strong>{{ usage?.configured ? 'On' : 'Off' }}</strong>
-          <small *ngIf="usage && !usage.configured">Add ANTHROPIC_API_KEY on the server to switch it on.</small>
-          <small *ngIf="usage?.configured">Model {{ usage?.model }}</small>
+          <strong>{{ usage?.mode === 'ai' ? 'AI on' : usage?.mode === 'offline' ? 'Offline mode' : 'Off' }}</strong>
+          <small *ngIf="usage?.mode === 'offline'">Answers from the list below, no AI and no cost. Add ANTHROPIC_API_KEY for AI answers.</small>
+          <small *ngIf="usage?.mode === 'off'">Set ASSISTANT_ENABLED=true to turn it on.</small>
+          <small *ngIf="usage?.mode === 'ai'">Model {{ usage?.model }}</small>
         </div>
         <div class="tile"><span>Chats today</span><strong>{{ todayCount }}</strong><small>Daily limit {{ usage?.dailyCap }}</small></div>
         <div class="tile"><span>Need an answer</span><strong>{{ gaps.length }}</strong><small>questions it could not answer</small></div>

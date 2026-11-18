@@ -4,6 +4,8 @@ module.exports = [
   ['What is Bookam?', 'Bookam gives your business one page with a link you can share on WhatsApp and Instagram. Customers book appointments or order products there, and you can take deposits online. It is made for Lagos businesses such as salons, barbers, caterers and shops.'],
   ['How do I start?', 'Tap "Start free", enter your phone number and the code we send you, then set up your page name and add your first service or product. It takes about five minutes and you do not need a card to begin.'],
   ['Do I need a card to sign up?', 'No. The Free plan costs nothing and needs no card. You only pay when you choose Starter or Pro.'],
+  ['How do bookings work?', 'You add your services, your working hours and a price for each. Customers open your link, pick a service and a free time, and book. If you ask for a deposit, they pay it online to confirm. You see every booking on your dashboard. Booking is on the Starter plan and above.'],
+  ['Can I sell products and take orders?', 'Yes. Add your products with photos and prices on your page. Customers choose what they want and send the order, and you see it on your dashboard. You can offer pickup, and delivery on the Pro plan.'],
   ['Do my customers need an account?', 'No. They pick a time or an item, then give a name and phone number. Nothing to install and no password.'],
   ['What does the Free plan include?', 'A page with a shareable link and up to 10 products. It does not include booking, online deposits, automatic reminders, delivery or analytics, and a small Bookam badge is shown on your page.'],
   ['What does Starter include?', 'Everything in Free plus unlimited products and services, the booking calendar, online deposits, and no Bookam badge on your page.'],

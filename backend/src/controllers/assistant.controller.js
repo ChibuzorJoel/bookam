@@ -63,6 +63,7 @@ exports.usage = asyncHandler(async (req, res) => {
     status: 'success',
     data: {
       configured: Boolean(env.ANTHROPIC_API_KEY) && env.ASSISTANT_ENABLED,
+      mode: !env.ASSISTANT_ENABLED ? 'off' : env.ANTHROPIC_API_KEY ? 'ai' : 'offline',
       dailyCap: env.ASSISTANT_DAILY_MESSAGE_CAP,
       model: env.ASSISTANT_MODEL,
       days: rows,
