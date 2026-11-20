@@ -13,6 +13,7 @@
       <div class="top__actions">
         <a class="btn btn--primary" routerLink="/dashboard/catalog">Products and services</a>
         <a class="btn btn--ghost" routerLink="/dashboard/bookings">Bookings and orders</a>
+        <a class="btn btn--ghost" routerLink="/dashboard/reviews"><i class="fa-solid fa-star" aria-hidden="true"></i> Reviews</a>
         <a class="btn btn--ghost" routerLink="/dashboard/delivery"><i class="fa-solid fa-motorcycle" aria-hidden="true"></i> Delivery</a>
         <a class="btn btn--ghost" routerLink="/dashboard/analytics">Analytics</a>
         <a class="btn btn--ghost" routerLink="/dashboard/settings">Settings</a>
@@ -36,6 +37,29 @@
     </div>
 
     <ng-container *ngIf="stats">
+      <!-- ============================== SETUP CHECKLIST ============================== -->
+      <section class="setup" *ngIf="showChecklist && checklist" aria-labelledby="setup-title">
+        <div class="setup__head">
+          <div>
+            <h2 id="setup-title" class="setup__title">Get your page ready</h2>
+            <p class="setup__sub">{{ checklist.done }} of {{ checklist.total }} done. Finish these so customers can book and pay you.</p>
+          </div>
+          <button type="button" class="setup__hide" (click)="hideChecklist()">Hide</button>
+        </div>
+        <div class="setup__bar" role="progressbar" aria-label="Setup progress" [attr.aria-valuenow]="checklistPercent" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="checklistPercent"></span></div>
+        <ul class="setup__list">
+          <li *ngFor="let i of checklist.items; trackBy: trackKey" [class.is-done]="i.done">
+            <i class="fa-solid" [ngClass]="i.done ? 'fa-circle-check' : 'fa-circle'" aria-hidden="true"></i>
+            <div class="setup__text">
+              <strong>{{ i.label }}</strong>
+              <span *ngIf="!i.done">{{ i.hint }}</span>
+            </div>
+            <a *ngIf="!i.done" class="btn btn--primary btn--sm" [routerLink]="i.to" [fragment]="i.fragment" [attr.target]="i.key === 'first' ? '_blank' : null">{{ i.key === 'first' ? 'Open my page' : i.key === 'share' ? 'Share' : 'Do this' }}</a>
+            <span *ngIf="i.done" class="sr-only">Done</span>
+          </li>
+        </ul>
+      </section>
+
       <!-- ============================== STATS ============================== -->
       <section class="stats" aria-label="Summary">
         <article class="stat">
@@ -137,6 +161,7 @@
 
         <!-- ============================== SHARE ============================== -->
         <aside class="col col--side">
+          <app-alerts-card></app-alerts-card>
           <section class="panel panel--dark" aria-labelledby="sh-title">
             <h2 id="sh-title" class="panel__title">Share your page</h2>
 
@@ -149,8 +174,26 @@
               <img class="qr" [src]="share.qrDataUrl" width="200" height="200" alt="QR code for your page. Print it for your shop." />
 
               <div class="share__actions">
-                <a class="btn btn--primary btn--sm" [href]="share.whatsappStatusLink" target="_blank" rel="noopener noreferrer">Share on WhatsApp</a>
-                <a class="btn btn--outline btn--sm" [href]="share.qrDataUrl" [attr.download]="'lagospages-qr.png'">Download QR</a>
+                <a class="btn btn--primary btn--sm" [href]="share.whatsappStatusLink" target="_blank" rel="noopener noreferrer" (click)="markShared()">Share on WhatsApp</a>
+                <a class="btn btn--outline btn--sm" [href]="share.qrDataUrl" [attr.download]="'bookam-qr.png'">Download QR</a>
+              </div>
+
+              <h3 class="share__sub">WhatsApp status flyer</h3>
+              <div class="flyer">
+                <label class="flyer__label" for="fl-line">One line under your name <span class="opt">(optional)</span></label>
+                <input id="fl-line" class="flyer__input" type="text" maxlength="60" [(ngModel)]="flyerLine" placeholder="Order on WhatsApp in seconds" />
+                <div class="flyer__styles" role="radiogroup" aria-label="Flyer colour">
+                  <button type="button" *ngFor="let s of flyerStyles" role="radio" [attr.aria-checked]="flyerStyle === s.value" class="flyer__style" [class.on]="flyerStyle === s.value" (click)="flyerStyle = s.value">{{ s.label }}</button>
+                </div>
+                <button type="button" class="btn btn--primary btn--sm" (click)="makeFlyer()" [disabled]="flyerBusy">{{ flyerBusy ? 'Making...' : flyerUrl ? 'Update flyer' : 'Make my flyer' }}</button>
+                <ng-container *ngIf="flyerUrl">
+                  <img class="flyer__preview" [src]="flyerUrl" width="270" height="480" alt="Preview of your WhatsApp status flyer" />
+                  <div class="share__actions">
+                    <a class="btn btn--primary btn--sm" [href]="flyerUrl" download="bookam-status.png" (click)="markShared()">Download</a>
+                    <button type="button" class="btn btn--outline btn--sm" *ngIf="canShareFile" (click)="shareFlyer()">Share</button>
+                  </div>
+                  <p class="flyer__hint">Download it, then add it to your WhatsApp status.</p>
+                </ng-container>
               </div>
 
               <h3 class="share__sub">Ready-made captions</h3>

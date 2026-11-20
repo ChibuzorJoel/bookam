@@ -1,3 +1,4 @@
+const industryKeys = require('../data/industryTemplates').KEYS;
 const { z } = require('zod');
 const { normalizePhone } = require('../utils/phone');
 const { isValidDateStr } = require('../utils/time');
@@ -37,6 +38,7 @@ const signup = z.object({
   password: emptyToUndef(password),
   businessName: z.string().trim().min(2, 'Business name is too short').max(80),
   mode: z.enum(['shop', 'booking', 'both']).default('both'),
+  industry: emptyToUndef(z.enum(industryKeys)),
   // Optional wish from the home page. Used only when valid and free; otherwise one is generated from the name.
   slug: emptyToUndef(z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).min(3).max(40)),
 });
@@ -273,7 +275,27 @@ const supportUpdate = z
   .object({ status: z.enum(['open', 'replied', 'closed']).optional(), note: z.string().trim().max(1000).optional() })
   .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
 
+const checklistUpdate = z
+  .object({ shared: z.literal(true).optional(), dismissed: z.boolean().optional() })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+
+const reviewCreate = z.object({
+  rating: z.coerce.number().int().min(1, 'Choose 1 to 5 stars').max(5, 'Choose 1 to 5 stars'),
+  comment: z.string().trim().max(500, 'Keep it under 500 characters').optional(),
+});
+const reviewUpdate = z
+  .object({ reply: z.string().trim().max(300, 'Keep your reply under 300 characters').optional(), hidden: z.boolean().optional() })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to update');
+const reviewListQuery = pagingQuery;
+const pushSubscribe = z.object({
+  endpoint: z.string().url().max(1000).startsWith('https://', 'Push endpoints must be https'),
+  keys: z.object({ p256dh: z.string().min(10).max(200), auth: z.string().min(10).max(100) }),
+});
+const pushUnsubscribe = z.object({ endpoint: z.string().url().max(1000) });
+
 module.exports = {
+  reviewCreate, reviewUpdate, reviewListQuery, pushSubscribe, pushUnsubscribe,
+  checklistUpdate,
   adminPaymentList, supportCreate, supportList, supportUpdate,
   assistantChat, knowledgeCreate, knowledgeUpdate, gapResolve,
   idParam, slugParam, codeParam, referenceParam, pagingQuery,

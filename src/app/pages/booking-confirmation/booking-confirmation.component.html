@@ -26,7 +26,7 @@
       <!-- Confirmed -->
       <ng-container *ngIf="isConfirmed">
         <span class="ok" aria-hidden="true">
-          <svg viewBox="0 0 20 20" width="30" height="30"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <i class="fa-solid fa-check" aria-hidden="true"></i>
         </span>
         <h1>Booking confirmed</h1>
         <p>See you soon, {{ booking.customerName }}. Take a screenshot of this page.</p>
@@ -41,6 +41,23 @@
           <div *ngIf="booking.business.address || booking.business.area"><dt>Where</dt><dd>{{ booking.business.address }}<ng-container *ngIf="booking.business.address && booking.business.area">, </ng-container>{{ booking.business.area }}</dd></div>
           <div class="code"><dt>Booking code</dt><dd>{{ booking.bookingCode }}</dd></div>
         </dl>
+
+        <section class="rate" *ngIf="booking.status === 'completed'" aria-labelledby="rate-title">
+          <ng-container *ngIf="canReview">
+            <h2 id="rate-title">How was your visit?</h2>
+            <div class="rate__stars" role="radiogroup" aria-label="Your rating">
+              <button type="button" *ngFor="let n of starSet" role="radio" [attr.aria-checked]="rating === n" [attr.aria-label]="n + (n === 1 ? ' star' : ' stars')" class="rate__star" [class.on]="n <= (hoverRating || rating)" (click)="setRating(n)" (mouseenter)="hoverRating = n" (mouseleave)="hoverRating = 0">
+                <i class="fa-solid fa-star" aria-hidden="true"></i>
+              </button>
+            </div>
+            <label class="rate__label" for="rate-comment">Say a few words (optional)</label>
+            <textarea id="rate-comment" rows="3" maxlength="600" [(ngModel)]="comment" placeholder="What did you like?"></textarea>
+            <p class="rate__err" role="alert" *ngIf="reviewError">{{ reviewError }}</p>
+            <button type="button" class="btn btn--dark" (click)="submitReview()" [disabled]="sending">{{ sending ? 'Sending...' : 'Send review' }}</button>
+          </ng-container>
+          <p class="rate__thanks" *ngIf="thanked"><i class="fa-solid fa-heart" aria-hidden="true"></i> Thank you for your review!</p>
+          <p class="rate__thanks" *ngIf="!canReview && !thanked && booking.review?.rating">You rated this visit {{ booking.review?.rating }} out of 5. Thank you!</p>
+        </section>
 
         <a class="btn btn--wa" *ngIf="booking.whatsappLink" [href]="booking.whatsappLink" target="_blank" rel="noopener noreferrer">Message {{ booking.business.name }} on WhatsApp</a>
         <a class="link" [routerLink]="['/', slug]">Back to {{ booking.business.name }}</a>

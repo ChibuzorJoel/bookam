@@ -12,6 +12,8 @@ const availability = require('../controllers/availability.controller');
 const bookings = require('../controllers/booking.controller');
 const orders = require('../controllers/order.controller');
 const dashboard = require('../controllers/dashboard.controller');
+const reviews = require('../controllers/review.controller');
+const pushCtl = require('../controllers/push.controller');
 const payout = require('../controllers/payout.controller');
 
 router.use(protect, restrictTo('owner'), loadBusiness);
@@ -56,6 +58,14 @@ router.get('/payments', validate(v.pagingQuery, 'query'), payout.listPayments);
 // Dashboard, analytics, share
 router.get('/dashboard', dashboard.summary);
 router.get('/analytics', dashboard.analytics);
+router.get('/reviews', validate(v.reviewListQuery, 'query'), reviews.list);
+router.patch('/reviews/:id', validate(v.idParam, 'params'), validate(v.reviewUpdate), reviews.update);
+router.get('/push/key', pushCtl.key);
+router.post('/push', validate(v.pushSubscribe), pushCtl.subscribe);
+router.delete('/push', validate(v.pushUnsubscribe), pushCtl.unsubscribe);
+router.post('/push/test', pushCtl.test);
+router.get('/checklist', dashboard.checklist);
+router.patch('/checklist', validate(v.checklistUpdate), dashboard.updateChecklist);
 router.get('/share', dashboard.share);
 router.get('/share/qr.png', dashboard.qrPng);
 

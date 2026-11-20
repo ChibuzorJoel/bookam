@@ -7,15 +7,19 @@ import {
   OnInit,
   PLATFORM_ID,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Meta, Title } from '@angular/platform-browser';
 import { forkJoin, of } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 
+import { AlertsCardComponent } from '../alerts-card/alerts-card.component';
+import { renderFlyer, FlyerStyle } from '../../core/flyer';
 import { ApiError, AuthService, Session } from '../../services/auth.service';
 import {
   BookingAction,
+  Checklist,
   BookingStatus,
   DashBooking,
   DashOrder,
@@ -48,7 +52,7 @@ const ORDER_LABEL: Record<OrderStatus, string> = {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, AlertsCardComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -67,6 +71,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   orders: DashOrder[] = [];
   stats: DashStats | null = null;
   share: ShareInfo | null = null;
+  /** "Get your page ready" steps. Null if it could not load; the rest of the page does not need it. */
+  checklist: Checklist | null = null;
   shareError = '';
 
   /** From ?plan= after sign-up from the pricing section. */
@@ -95,7 +101,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   /* ---------------- Lifecycle ---------------- */
   ngOnInit(): void {
-    this.title.setTitle('Dashboard | LagosPages');
+    this.title.setTitle('Dashboard | Bookam');
     this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
 
     const p = this.route.snapshot.queryParamMap.get('plan');
@@ -108,6 +114,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.flyerUrl) {
+      URL.revokeObjectURL(this.flyerUrl);
+    }
     if (this.toastTimer) {
       clearTimeout(this.toastTimer);
     }
@@ -129,6 +138,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           return of(null);
         })
       ),
+      checklist: this.api.checklist().pipe(catchError(() => of(null))),
     })
       .pipe(
         finalize(() => {
@@ -137,7 +147,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         })
       )
       .subscribe({
-        next: ({ summary, share }) => {
+        next: ({ summary, share, checklist }) => {
+          this.checklist = checklist;
           this.today = summary.today;
           this.bookings = summary.todaysBookings;
           this.orders = summary.recentOrders;
@@ -217,11 +228,111 @@ export class DashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Shown while some steps are left and the owner has not hidden it. */
+  get showChecklist(): boolean {
+    return !!this.checklist && !this.checklist.dismissed && this.checklist.done < this.checklist.total;
+  }
+
+  get checklistPercent(): number {
+    return this.checklist ? Math.round((this.checklist.done / this.checklist.total) * 100) : 0;
+  }
+
+  hideChecklist(): void {
+    if (!this.checklist) {
+      return;
+    }
+    this.checklist = { ...this.checklist, dismissed: true };
+    this.api.updateChecklist({ dismissed: true }).subscribe({ error: () => undefined });
+  }
+
+  /** Copying or sharing the link ticks the "Share your link" step. */
+  markShared(): void {
+    if (!this.checklist || this.checklist.items.find((i) => i.key === 'share')?.done) {
+      return;
+    }
+    this.api.updateChecklist({ shared: true }).subscribe({
+      next: () =>
+        this.api.checklist().subscribe({
+          next: (c) => {
+            this.checklist = c;
+            this.cdr.markForCheck();
+          },
+          error: () => undefined,
+        }),
+      error: () => undefined,
+    });
+  }
+
+  trackKey(_: number, i: { key: string }): string {
+    return i.key;
+  }
+
+  /* ---------------- WhatsApp status flyer ---------------- */
+  readonly flyerStyles: { value: FlyerStyle; label: string }[] = [
+    { value: 'green', label: 'Green' },
+    { value: 'gold', label: 'Gold' },
+    { value: 'dark', label: 'Dark' },
+  ];
+  flyerStyle: FlyerStyle = 'green';
+  flyerLine = '';
+  flyerUrl = '';
+  flyerBusy = false;
+  private flyerBlob: Blob | null = null;
+
+  get canShareFile(): boolean {
+    try {
+      return typeof navigator !== 'undefined' && !!navigator.canShare && navigator.canShare({ files: [new File([''], 'a.png', { type: 'image/png' })] });
+    } catch {
+      return false;
+    }
+  }
+
+  async makeFlyer(): Promise<void> {
+    if (!this.share || this.flyerBusy) {
+      return;
+    }
+    this.flyerBusy = true;
+    this.cdr.markForCheck();
+    try {
+      this.flyerBlob = await renderFlyer({
+        name: this.businessName,
+        url: this.share.url,
+        qrDataUrl: this.share.qrDataUrl,
+        kind: this.session?.business?.mode ?? 'both',
+        style: this.flyerStyle,
+        line: this.flyerLine,
+      });
+      if (this.flyerUrl) {
+        URL.revokeObjectURL(this.flyerUrl);
+      }
+      this.flyerUrl = URL.createObjectURL(this.flyerBlob);
+    } catch (e) {
+      this.say(e instanceof Error ? e.message : 'Could not make the flyer.');
+    } finally {
+      this.flyerBusy = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  async shareFlyer(): Promise<void> {
+    if (!this.flyerBlob) {
+      return;
+    }
+    const file = new File([this.flyerBlob], 'bookam-status.png', { type: 'image/png' });
+    try {
+      await navigator.share({ files: [file], text: this.share?.url });
+      this.markShared();
+    } catch {
+      /* the person closed the share sheet: nothing to do */
+    }
+  }
+
   copyLink(text?: string): void {
     const value = text ?? this.share?.url;
     if (!value || !this.isBrowser) {
       return;
     }
+    this.markShared();
     const nav = this.doc.defaultView?.navigator;
     if (nav?.clipboard) {
       nav.clipboard.writeText(value).then(

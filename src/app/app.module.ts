@@ -10,6 +10,8 @@ import { HeaderComponent } from './layout/header/header.component';
 import { FooterComponent } from './layout/footer/footer.component';
 import { AssistantComponent } from './pages/assistant/assistant.component';
 import { authInterceptor } from './core/auth.interceptor';
+import { ReviewsComponent } from './pages/reviews/reviews.component';
+import { AlertsCardComponent } from './pages/alerts-card/alerts-card.component';
 
 
 

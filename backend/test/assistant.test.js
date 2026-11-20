@@ -31,10 +31,27 @@ test('system prompt carries the real plan prices and the knowledge', () => {
   assert.match(s, /\[\[unsure\]\]/);
 });
 
-test('without an API key the assistant answers with the fallback and never calls out', async () => {
-  const r = await a.chat([{ role: 'user', content: 'hi' }]);
-  assert.strictEqual(r.available, false);
-  assert.ok(r.links.length >= 1);
+test('offline mode (no AI): answers from the knowledge base, prices are real, unknown questions are flagged', () => {
+  const kb = require('../src/data/starterKnowledge').map(([question, answer]) => ({ question, answer }));
+  assert.match(a.localAnswer('how much does it cost', kb).reply, /₦4,000/);
+  assert.match(a.localAnswer('what is the delivery code', kb).reply, /4-digit/);
+  assert.match(a.localAnswer('is my data safe', kb).reply, /Privacy Policy/);
+  assert.ok(!a.localAnswer('hello', kb).unsure);
+  const none = a.localAnswer('do you do tax returns', kb);
+  assert.ok(none.unsure);
+  assert.match(none.reply, /talk to a person/);
+});
+
+test('ASSISTANT_ENABLED=false switches the assistant off', async () => {
+  const env = require('../src/config/env');
+  const before = env.ASSISTANT_ENABLED;
+  env.ASSISTANT_ENABLED = false;
+  try {
+    const r = await a.chat([{ role: 'user', content: 'hi' }]);
+    assert.strictEqual(r.available, false);
+  } finally {
+    env.ASSISTANT_ENABLED = before;
+  }
 });
 
 test('validators: chat needs messages, admin entries need text, gap actions are checked', () => {
@@ -83,16 +100,16 @@ test('full chat with the model faked: calls Claude with the knowledge, strips ta
     assert.ok(!g.reply.includes('[[unsure]]'));
     assert.deepStrictEqual(gaps, ['do you do tax returns?']);
 
-    used = 3; // cap reached: no call to the model
+    used = 3; // cap reached: no call to the model, but the visitor still gets an offline answer
     sent = null;
-    const capped = await a.chat([{ role: 'user', content: 'hi' }]);
-    assert.strictEqual(capped.available, false);
+    const capped = await a.chat([{ role: 'user', content: 'how much does it cost' }]);
+    assert.match(capped.reply, /₦4,000/);
     assert.strictEqual(sent, null);
 
     used = 0;
     global.fetch = async () => ({ ok: false, status: 500, json: async () => ({}) });
-    const failed = await a.chat([{ role: 'user', content: 'hi' }]);
-    assert.ok(failed.reply.length > 0 && failed.links.length > 0); // visitor gets the fallback, not an error
+    const failed = await a.chat([{ role: 'user', content: 'how much does it cost' }]);
+    assert.match(failed.reply, /₦10,000/); // provider down: visitor still gets an offline answer, not an error
   } finally {
     global.fetch = realFetch;
     Object.assign(env, saved);

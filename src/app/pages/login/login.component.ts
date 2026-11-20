@@ -115,6 +115,27 @@ export class LoginComponent implements OnInit, OnDestroy {
     { value: 'booking', title: 'Take bookings', text: 'Slots and deposits' },
   ];
 
+  /** Starter content picked at sign-up. Keys match the backend's industryTemplates. */
+  readonly industries: { value: string; label: string; mode: BusinessMode }[] = [
+    { value: 'salon', label: 'Hair salon', mode: 'booking' },
+    { value: 'barber', label: 'Barber shop', mode: 'booking' },
+    { value: 'makeup', label: 'Makeup artist', mode: 'booking' },
+    { value: 'spa', label: 'Spa, nails and lashes', mode: 'booking' },
+    { value: 'fashion', label: 'Fashion and tailoring', mode: 'both' },
+    { value: 'food', label: 'Food and cakes', mode: 'shop' },
+    { value: 'gadgets', label: 'Phones and gadgets', mode: 'shop' },
+    { value: 'beauty', label: 'Beauty products', mode: 'shop' },
+    { value: 'photo', label: 'Photography', mode: 'booking' },
+  ];
+
+  /** Picking a business type suggests the matching page type (the owner can still change it). */
+  onIndustry(): void {
+    const hit = this.industries.find((i) => i.value === this.signupForm.controls.industry.value);
+    if (hit) {
+      this.signupForm.controls.mode.setValue(hit.mode);
+    }
+  }
+
   /* ---------------- Forms ---------------- */
   readonly loginForm = new FormGroup({
     identifier: new FormControl('', {
@@ -139,6 +160,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       nonNullable: true,
       validators: [Validators.minLength(8), Validators.maxLength(100)],
     }),
+    industry: new FormControl('', { nonNullable: true }),
     mode: new FormControl<BusinessMode>('both', { nonNullable: true }),
     agree: new FormControl(false, { nonNullable: true, validators: [Validators.requiredTrue] }),
   });
@@ -345,6 +367,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       phone,
       businessName: v.businessName.trim(),
       mode: v.mode,
+      ...(v.industry ? { industry: v.industry } : {}),
       ...(v.email.trim() ? { email: v.email.trim() } : {}),
       ...(v.password ? { password: v.password } : {}),
       ...(this.wantedSlug.length >= 3 ? { slug: this.wantedSlug } : {}),

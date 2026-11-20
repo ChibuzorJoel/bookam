@@ -21,12 +21,13 @@ const routes: Routes = [
   { path: 'dashboard', canActivate: [authGuard], loadComponent: () => import('./pages/dashboard/dashboard.component').then((m) => m.DashboardComponent) },
   { path: 'dashboard/catalog', canActivate: [authGuard], loadComponent: () => import('./pages/catalog/catalog.component').then((m) => m.CatalogComponent) },
   { path: 'dashboard/bookings', canActivate: [authGuard], loadComponent: () => import('./pages/records/records.component').then((m) => m.RecordsComponent) },
+  { path: 'dashboard/reviews', canActivate: [authGuard], loadComponent: () => import('./pages/reviews/reviews.component').then((m) => m.ReviewsComponent) },
   { path: 'dashboard/orders', canActivate: [authGuard], data: { tab: 'orders' }, loadComponent: () => import('./pages/records/records.component').then((m) => m.RecordsComponent) },
   { path: 'dashboard/analytics', canActivate: [authGuard], loadComponent: () => import('./pages/analytics/analytics.component').then((m) => m.AnalyticsComponent) },
   { path: 'dashboard/delivery', canActivate: [authGuard], loadComponent: () => import('./pages/delivery/delivery.component').then((m) => m.DeliveryComponent) },
   { path: 'dashboard/account', canActivate: [authGuard], loadComponent: () => import('./pages/account/account.component').then((m) => m.AccountComponent) },
   { path: 'dashboard/settings', canActivate: [authGuard], loadComponent: () => import('./pages/settings/settings.component').then((m) => m.SettingsComponent) },
-  // Owners return here after paying for a plan (?reference=...).
+  // Paystack sends owners back here after they pay for a plan (?reference=...).
   { path: 'dashboard/billing', canActivate: [authGuard], data: { tab: 'plan' }, loadComponent: () => import('./pages/settings/settings.component').then((m) => m.SettingsComponent) },
 
   /* ---------- Platform admin ---------- */

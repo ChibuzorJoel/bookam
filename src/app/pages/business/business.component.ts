@@ -21,6 +21,7 @@ import {
   BookingCreated,
   OrderCreated,
   PublicBusiness,
+  PublicReviews,
   PublicProduct,
   PublicService as PublicApi,
   PublicServiceItem,
@@ -75,6 +76,8 @@ export class BusinessComponent implements OnInit, OnDestroy {
   business: PublicBusiness | null = null;
   products: PublicProduct[] = [];
   services: PublicServiceItem[] = [];
+  reviews: PublicReviews | null = null;
+  readonly starSet = [1, 2, 3, 4, 5];
   tab: Tab = 'shop';
 
   /* ---------------- Shop state ---------------- */
@@ -150,6 +153,15 @@ export class BusinessComponent implements OnInit, OnDestroy {
     this.layout.hideChrome(false);
   }
 
+  /** Filled stars for a rating, rounded to the nearest whole star. */
+  filled(n: number, rating: number): boolean {
+    return n <= Math.round(rating);
+  }
+
+  reviewDate(iso: string): string {
+    return new Intl.DateTimeFormat('en-NG', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }).format(new Date(iso));
+  }
+
   /* ---------------- Loading ---------------- */
   load(): void {
     this.loading = true;
@@ -170,6 +182,7 @@ export class BusinessComponent implements OnInit, OnDestroy {
           this.business = page.business;
           this.products = page.products;
           this.services = page.services;
+          this.reviews = page.reviews ?? null;
           this.cart = [];
           this.resetBooking();
           this.days = this.buildDays(page.business);
@@ -180,7 +193,7 @@ export class BusinessComponent implements OnInit, OnDestroy {
         error: (e: ApiError) => {
           if (e.status === 404) {
             this.notFound = true;
-            this.title.setTitle(`Page not found | LagosPages`);
+            this.title.setTitle(`Page not found | Bookam`);
             this.meta.updateTag({ name: 'robots', content: 'noindex' });
           } else {
             this.error = e.message;

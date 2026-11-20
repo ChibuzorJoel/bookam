@@ -24,6 +24,10 @@ const schema = z.object({
   ENFORCE_PLAN_LIMITS: bool('true'),
   REQUIRE_ADMIN_APPROVAL: bool('false'),
   NOTIFY_SMS: bool('false'),
+  // Web push (phone/desktop notifications). Make keys with: npm run vapid. Leave empty to turn push off.
+  VAPID_PUBLIC_KEY: z.string().default(''),
+  VAPID_PRIVATE_KEY: z.string().default(''),
+  VAPID_SUBJECT: z.string().default('mailto:support@bookam.ng'),
   BOOKING_HOLD_MINUTES: z.coerce.number().default(10),
   MAX_ADVANCE_BOOKING_DAYS: z.coerce.number().default(60),
 

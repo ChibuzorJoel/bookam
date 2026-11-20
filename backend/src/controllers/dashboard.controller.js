@@ -1,6 +1,7 @@
 const QRCode = require('qrcode');
 const asyncHandler = require('../utils/asyncHandler');
-const { Booking, Order, Payment } = require('../models');
+const { Booking, Order, Payment, Product, Service } = require('../models');
+const { payoutReady } = require('../utils/payout');
 const { dayRange, todayLagos, addDaysStr, toDate } = require('../utils/time');
 const { publicUrl } = require('../services/business.service');
 const { assertFeature } = require('../middleware/planGuard');
@@ -109,4 +110,50 @@ exports.qrPng = asyncHandler(async (req, res) => {
   const png = await QRCode.toBuffer(publicUrl(req.business), { margin: 2, width: 1024, type: 'png' });
   res.set({ 'Content-Type': 'image/png', 'Content-Disposition': `attachment; filename="${req.business.slug}-qr.png"` });
   res.send(png);
+});
+
+
+/**
+ * GET /me/checklist -> "Get your page ready" steps, worked out from what the owner has actually done.
+ * Each step carries the page to open, so the frontend only has to show it.
+ */
+exports.checklist = asyncHandler(async (req, res) => {
+  const b = req.business;
+  const businessId = b._id;
+  const [products, services, booking, order] = await Promise.all([
+    Product.countDocuments({ businessId }),
+    Service.countDocuments({ businessId }),
+    Booking.exists({ businessId }),
+    Order.exists({ businessId }),
+  ]);
+
+  const sells = b.mode === 'shop' ? 'product' : b.mode === 'booking' ? 'service' : 'service or product';
+  const hasCatalog = b.mode === 'shop' ? products > 0 : b.mode === 'booking' ? services > 0 : products + services > 0;
+  const hasHours = Array.isArray(b.hours) && b.hours.some((h) => !h.isClosed && h.openTime && h.closeTime);
+
+  const items = [
+    { key: 'profile', label: 'Add your logo and a short description', hint: 'Customers trust a page that looks like a real business.', done: Boolean(b.logoUrl || b.description || b.tagline), to: '/dashboard/settings' },
+    { key: 'catalog', label: `Add your first ${sells}`, hint: 'Add a name, a price and (for services) how long it takes.', done: hasCatalog, to: '/dashboard/catalog' },
+  ];
+  if (b.mode !== 'shop') items.push({ key: 'hours', label: 'Set your opening hours', hint: 'Customers can only book the times you are open.', done: hasHours, to: '/dashboard/settings' });
+  items.push(
+    { key: 'bank', label: 'Add your bank account', hint: 'This is where customer deposits are paid to you.', done: payoutReady(b), to: '/dashboard/settings' },
+    { key: 'share', label: 'Share your link', hint: 'Post it on your WhatsApp status and Instagram bio.', done: Boolean(b.onboarding?.sharedAt), to: '/dashboard', fragment: 'sh-title' },
+    { key: 'first', label: 'Get your first booking or order', hint: 'Open your page and make a test one yourself to see how it feels.', done: Boolean(booking || order), to: `/${b.slug}` }
+  );
+
+  res.json({
+    status: 'success',
+    data: { items, done: items.filter((i) => i.done).length, total: items.length, dismissed: Boolean(b.onboarding?.dismissed) },
+  });
+});
+
+// PATCH /me/checklist  { shared: true } when they copy or share the link; { dismissed: true|false } to hide or show the card
+exports.updateChecklist = asyncHandler(async (req, res) => {
+  const b = req.business;
+  b.onboarding = b.onboarding || {};
+  if (req.body.shared && !b.onboarding.sharedAt) b.onboarding.sharedAt = new Date();
+  if (typeof req.body.dismissed === 'boolean') b.onboarding.dismissed = req.body.dismissed;
+  await b.save();
+  res.json({ status: 'success', data: {} });
 });

@@ -14,4 +14,6 @@ module.exports = {
   AssistantGap: require('./AssistantGap'),
   AssistantUsage: require('./AssistantUsage'),
   SupportMessage: require('./SupportMessage'),
+  Review: require('./Review'),
+  PushSubscription: require('./PushSubscription'),
 };

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   LagosPages dashboard  |  dashboard.component.scss
+   Bookam dashboard  |  dashboard.component.scss
    Same tokens as home, header and login.
    ========================================================================== */
 
@@ -691,5 +691,198 @@ main:focus {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* ---------- Setup checklist ---------- */
+.setup {
+  margin-bottom: 20px;
+  padding: 18px 16px;
+  border: 1.5px solid $gold-500;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff9e3, $white 70%);
+  animation: setup-in 0.4s $ease both;
+
+  @include up($bp-md) {
+    padding: 22px 24px;
+  }
+}
+
+@keyframes setup-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.setup__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setup__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.setup__sub {
+  margin: 2px 0 0;
+  color: $muted;
+  font-size: 0.95rem;
+}
+
+.setup__hide {
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: $muted;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 3px solid $green-600;
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+}
+
+.setup__bar {
+  height: 8px;
+  margin: 14px 0 6px;
+  border-radius: 999px;
+  background: $tint;
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, $green-600, $gold-500);
+    transition: width 0.6s $ease;
+  }
+}
+
+.setup__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 4px 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-top: 1px solid $line;
+
+    @include up($bp-sm) {
+      grid-template-columns: 24px 1fr auto;
+    }
+
+    > i {
+      font-size: 1.15rem;
+      color: #b9c4c1;
+    }
+
+    &.is-done > i {
+      color: $green-600;
+    }
+
+    > .btn {
+      grid-column: 2;
+      justify-self: start;
+      @include up($bp-sm) {
+        grid-column: auto;
+      }
+    }
+  }
+}
+
+.setup__text {
+  display: grid;
+  gap: 2px;
+
+  strong {
+    font-weight: 800;
+  }
+  span {
+    color: $muted;
+    font-size: 0.92rem;
+  }
+}
+
+.is-done .setup__text strong {
+  color: $muted;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setup,
+  .setup__bar span {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* WhatsApp status flyer */
+.flyer {
+  display: grid;
+  gap: 10px;
+  &__label {
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  &__input {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: inherit;
+  }
+  &__styles {
+    display: flex;
+    gap: 8px;
+  }
+  &__style {
+    flex: 1;
+    font: inherit;
+    font-weight: 700;
+    padding: 7px 0;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    &.on {
+      border-color: $gold-500;
+      background: rgba(255, 194, 26, 0.18);
+    }
+  }
+  &__preview {
+    width: 100%;
+    max-width: 270px;
+    height: auto;
+    margin: 4px auto 0;
+    border-radius: 14px;
+    display: block;
+  }
+  &__hint {
+    margin: 0;
+    font-size: 0.8rem;
+    opacity: 0.8;
+    text-align: center;
   }
 }

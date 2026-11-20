@@ -36,6 +36,7 @@ export interface SignupPayload {
   phone: string;
   businessName: string;
   mode: BusinessMode;
+  industry?: string;
   email?: string;
   password?: string;
   slug?: string;

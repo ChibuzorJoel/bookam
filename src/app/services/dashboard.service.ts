@@ -63,6 +63,22 @@ export interface ShareInfo {
   templates: string[];
 }
 
+export interface ChecklistItem {
+  key: string;
+  label: string;
+  hint: string;
+  done: boolean;
+  to: string;
+  fragment?: string;
+}
+
+export interface Checklist {
+  items: ChecklistItem[];
+  done: number;
+  total: number;
+  dismissed: boolean;
+}
+
 interface Envelope<T> {
   status: 'success';
   data: T;
@@ -84,6 +100,20 @@ export class DashboardService {
   share(): Observable<ShareInfo> {
     return this.http.get<Envelope<ShareInfo>>(`${this.base}/share`).pipe(
       map((r) => r.data),
+      catchError((e) => this.fail(e))
+    );
+  }
+
+  checklist(): Observable<Checklist> {
+    return this.http.get<Envelope<Checklist>>(`${this.base}/checklist`).pipe(
+      map((r) => r.data),
+      catchError((e) => this.fail(e))
+    );
+  }
+
+  updateChecklist(body: { shared?: true; dismissed?: boolean }): Observable<void> {
+    return this.http.patch<unknown>(`${this.base}/checklist`, body).pipe(
+      map(() => undefined),
       catchError((e) => this.fail(e))
     );
   }

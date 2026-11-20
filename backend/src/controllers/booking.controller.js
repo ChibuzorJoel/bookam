@@ -84,6 +84,7 @@ exports.updateBooking = asyncHandler(async (req, res) => {
     case 'no_show':
       booking.status = action === 'complete' ? 'completed' : 'no_show';
       await booking.save();
+      if (action === 'complete') notifications.background(notifications.reviewRequest(booking, req.business));
       break;
 
     case 'reschedule': {

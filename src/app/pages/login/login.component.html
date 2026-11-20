@@ -1,15 +1,10 @@
 <!-- Reusable bits -->
 <ng-template #spinner>
-  <svg class="spin" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="3" />
-    <path d="M21 12a9 9 0 0 0-9-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-  </svg>
+  <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
 </ng-template>
 
 <ng-template #check>
-  <svg class="ic-check" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-    <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-  </svg>
+  <i class="fa-solid fa-check ic-check" aria-hidden="true"></i>
 </ng-template>
 
 <main id="main" tabindex="-1" class="auth">
@@ -168,6 +163,15 @@
               aria-describedby="su-name-err"
             />
             <p id="su-name-err" class="field__error">{{ errorOf(signupForm.controls.businessName, 'Business name') }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="su-industry">What kind of business? <span class="opt">(optional)</span></label>
+            <select id="su-industry" class="input" formControlName="industry" (change)="onIndustry()" aria-describedby="su-industry-hint">
+              <option value="">Not listed / start empty</option>
+              <option *ngFor="let i of industries" [value]="i.value">{{ i.label }}</option>
+            </select>
+            <p id="su-industry-hint" class="field__hint">We add a few example items (hidden until you set your own prices) so your page is not empty.</p>
           </div>
 
           <div class="field">

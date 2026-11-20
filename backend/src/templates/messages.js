@@ -22,6 +22,10 @@ module.exports = {
     (booking.depositAmount ? `Deposit paid: ${formatNaira(booking.depositAmount)}. ` : '') +
     `Code: ${booking.bookingCode}`,
 
+  reviewRequestSubject: ({ business }) => `How was ${business.name}?`,
+  reviewRequestCustomer: ({ booking, business, url }) =>
+    `Hi ${booking.customerName}, thank you for visiting ${business.name}! How was it? Rate your visit in 30 seconds: ${url}`,
+
   bookingCancelledCustomer: ({ booking, business }) =>
     `Hi ${booking.customerName}, your booking ${booking.bookingCode} with ${business.name} for ${formatLagos(booking.startAt)} has been cancelled.` +
     (booking.paymentStatus === 'refund_required' ? ' Your deposit will be refunded by the business.' : ''),

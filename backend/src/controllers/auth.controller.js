@@ -15,7 +15,7 @@ const startSession = (res, user) => {
 
 // POST /auth/signup  -> creates the user + their business, then texts an OTP
 exports.signup = asyncHandler(async (req, res) => {
-  const { phone, email, password, businessName, mode, slug } = req.body;
+  const { phone, email, password, businessName, mode, slug, industry } = req.body;
 
   let user = await User.findOne({ phone });
   if (user?.phoneVerified) throw new AppError('An account with this phone number already exists. Please log in.', 409, 'PHONE_TAKEN');
@@ -29,7 +29,7 @@ exports.signup = asyncHandler(async (req, res) => {
   if (!user) {
     user = await User.create({ phone, email, passwordHash, role: 'owner' });
     try {
-      await createBusinessForOwner(user, { businessName, mode, slug });
+      await createBusinessForOwner(user, { businessName, mode, slug, industry });
     } catch (err) {
       await User.deleteOne({ _id: user._id });
       throw err;

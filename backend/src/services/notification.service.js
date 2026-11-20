@@ -2,10 +2,15 @@ const env = require('../config/env');
 const logger = require('../utils/logger');
 const { Notification, User } = require('../models');
 const sms = require('./sms.service');
+const push = require('./push.service');
 const email = require('./email.service');
 const whatsapp = require('./whatsapp.service');
 const messages = require('../templates/messages');
 const { hasFeature } = require('../middleware/planGuard');
+const { publicUrl } = require('./business.service');
+
+const formatWhen = (d) =>
+  new Intl.DateTimeFormat('en-NG', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' }).format(new Date(d));
 
 /** Sends one message on one channel and records the outcome. NEVER throws: a failed SMS must not break a booking. */
 async function deliver({ businessId, bookingId, type, channel, recipient, subject, message }) {
@@ -51,6 +56,12 @@ function fanOut({ business, booking, owner, type, customerText, ownerText, subje
 
 async function bookingConfirmed(booking, business) {
   const owner = await ownerOf(business);
+  push.notifyBusiness(business._id, {
+    title: 'New booking',
+    body: `${booking.customerName} booked ${booking.serviceName || 'a service'} on ${formatWhen(booking.startAt)}`,
+    url: '/dashboard/bookings',
+    tag: `booking-${booking.bookingCode}`,
+  });
   return fanOut({
     business, booking, owner, type: 'booking_confirmed',
     subject: `Booking confirmed - ${booking.bookingCode}`,
@@ -82,6 +93,17 @@ async function bookingReminder(booking, business, hoursBefore) {
   });
 }
 
+/** Asks the customer to rate a completed booking. Email if we have one, SMS only when SMS is switched on. */
+async function reviewRequest(booking, business) {
+  const base = { businessId: business._id, bookingId: booking._id, type: 'review_request' };
+  const url = `${publicUrl(business)}/booking/${booking.bookingCode}`;
+  const text = messages.reviewRequestCustomer({ booking, business, url });
+  const jobs = [];
+  if (booking.customerEmail) jobs.push(deliver({ ...base, channel: 'email', recipient: booking.customerEmail, subject: messages.reviewRequestSubject({ business }), message: text }));
+  if (env.NOTIFY_SMS && booking.customerPhone) jobs.push(deliver({ ...base, channel: 'sms', recipient: booking.customerPhone, message: text }));
+  return Promise.allSettled(jobs);
+}
+
 async function refundRequired(booking, business) {
   const owner = await ownerOf(business);
   const text = messages.refundRequiredOwner({ booking, business });
@@ -95,6 +117,12 @@ async function refundRequired(booking, business) {
 async function newOrder(order, business) {
   const owner = await ownerOf(business);
   const text = messages.newOrderOwner({ order, business });
+  push.notifyBusiness(business._id, {
+    title: 'New order',
+    body: `${order.customerName} ordered ${order.items.map((i) => `${i.qty} x ${i.name}`).join(', ')}`,
+    url: '/dashboard/orders',
+    tag: `order-${order.orderCode}`,
+  });
   const base = { businessId: business._id, type: 'new_order' };
   const jobs = [];
   if (owner?.email) jobs.push(deliver({ ...base, channel: 'email', recipient: owner.email, subject: `New order ${order.orderCode}`, message: text }));
@@ -119,5 +147,5 @@ const background = (promise) => {
 
 module.exports = {
   deliver, background, bookingConfirmed, bookingCancelled, bookingRescheduled, bookingReminder,
-  refundRequired, newOrder, toOwner,
+  refundRequired, newOrder, toOwner, reviewRequest,
 };

@@ -69,6 +69,12 @@ const businessSchema = new mongoose.Schema(
       zones: { type: [deliveryZoneSchema], default: [] },
     },
 
+    // Dashboard setup checklist: when the owner first shared their link, and whether they hid the checklist.
+    onboarding: {
+      sharedAt: Date,
+      dismissed: { type: Boolean, default: false },
+    },
+
     status: { type: String, enum: ['pending', 'active', 'suspended'], default: 'active' },
     suspendedReason: String,
 

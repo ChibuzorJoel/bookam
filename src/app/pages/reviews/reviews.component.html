@@ -1,0 +1,51 @@
+<main id="main" tabindex="-1" class="page">
+  <div class="wrap">
+    <a class="back" routerLink="/dashboard">&larr; Dashboard</a>
+    <h1>Reviews</h1>
+    <p class="sub" *ngIf="summary.count">
+      <span class="stars" aria-hidden="true"><i *ngFor="let n of starSet" class="fa-solid fa-star" [class.on]="n <= summary.average + 0.49"></i></span>
+      <strong>{{ summary.average }}</strong> from {{ summary.count }} public {{ summary.count === 1 ? 'review' : 'reviews' }}
+    </p>
+    <p class="sub" *ngIf="!summary.count && !loading">Customers can rate a visit after you mark the booking as done. Their reviews show up here.</p>
+
+    <p class="toast" role="status" aria-live="polite" *ngIf="toast">{{ toast }}</p>
+    <p class="err" role="alert" *ngIf="error">{{ error }} <button type="button" class="link" (click)="load(page)">Try again</button></p>
+    <p class="muted" *ngIf="loading">Loading...</p>
+
+    <ul class="list" *ngIf="!loading">
+      <li class="card" *ngFor="let r of reviews; trackBy: track" [class.card--hidden]="r.hidden">
+        <div class="card__top">
+          <span class="stars" role="img" [attr.aria-label]="r.rating + ' out of 5'"><i *ngFor="let n of starSet" class="fa-solid fa-star" [class.on]="n <= r.rating"></i></span>
+          <span class="who">{{ r.customerName }} · {{ date(r.createdAt) }}</span>
+          <span class="tag" *ngIf="r.hidden">Hidden</span>
+        </div>
+        <p class="svc" *ngIf="r.serviceName">{{ r.serviceName }}</p>
+        <p class="text" *ngIf="r.comment">{{ r.comment }}</p>
+        <p class="text text--none" *ngIf="!r.comment">No comment, just a rating.</p>
+
+        <p class="reply" *ngIf="r.reply && replyingTo !== r._id"><strong>Your reply:</strong> {{ r.reply }}</p>
+
+        <div class="replybox" *ngIf="replyingTo === r._id">
+          <label [for]="'reply-' + r._id">Your public reply</label>
+          <textarea [id]="'reply-' + r._id" rows="3" maxlength="300" [(ngModel)]="replyText" placeholder="Thank them, or say how you will do better."></textarea>
+          <div class="row">
+            <button type="button" class="btn btn--primary" (click)="saveReply(r)" [disabled]="busyId === r._id">Save reply</button>
+            <button type="button" class="btn btn--ghost" (click)="cancelReply()">Cancel</button>
+            <span class="count">{{ replyText.length }}/300</span>
+          </div>
+        </div>
+
+        <div class="row" *ngIf="replyingTo !== r._id">
+          <button type="button" class="btn btn--ghost" (click)="openReply(r)">{{ r.reply ? 'Edit reply' : 'Reply' }}</button>
+          <button type="button" class="btn btn--ghost" (click)="toggleHidden(r)" [disabled]="busyId === r._id">{{ r.hidden ? 'Show on my page' : 'Hide' }}</button>
+        </div>
+      </li>
+    </ul>
+
+    <nav class="pager" *ngIf="pages > 1" aria-label="Pages">
+      <button type="button" class="btn btn--ghost" (click)="load(page - 1)" [disabled]="page <= 1 || loading">Previous</button>
+      <span>Page {{ page }} of {{ pages }}</span>
+      <button type="button" class="btn btn--ghost" (click)="load(page + 1)" [disabled]="page >= pages || loading">Next</button>
+    </nav>
+  </div>
+</main>

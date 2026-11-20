@@ -1035,3 +1035,71 @@ main:focus {
     scroll-behavior: auto;
   }
 }
+
+/* ---------- Ratings and reviews ---------- */
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 0.85em;
+  i {
+    color: rgba(8, 48, 45, 0.2);
+    &.on {
+      color: $gold-500;
+    }
+  }
+}
+
+.hero__rating {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  .stars i:not(.on) {
+    color: rgba(255, 255, 255, 0.35);
+  }
+}
+
+.reviews__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.review {
+  background: $white;
+  border: 1px solid $line;
+  border-radius: 14px;
+  padding: 14px 16px;
+  &__top {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  &__who {
+    font-size: 0.85rem;
+    color: $muted;
+  }
+  &__text {
+    margin: 8px 0 0;
+    overflow-wrap: anywhere;
+  }
+  &__svc {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: $muted;
+  }
+  &__reply {
+    margin: 10px 0 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--accent, #{$green-600});
+    background: $tint;
+    border-radius: 0 10px 10px 0;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+}

@@ -1,7 +1,9 @@
 const AppError = require('../utils/AppError');
 const { payoutReady } = require('../utils/payout');
 const asyncHandler = require('../utils/asyncHandler');
-const { Business, Product, Service, Booking, Order } = require('../models');
+const { Business, Product, Service, Booking, Order, Review } = require('../models');
+const reviewService = require('../services/review.service');
+const { getPagination, pageMeta } = require('../utils/pagination');
 const { maskPhone } = require('../utils/phone');
 const crypto = require('crypto');
 const { generateOrderCode } = require('../utils/ids');
@@ -25,7 +27,8 @@ async function pagePayload(business) {
     wantsShop ? Product.find({ businessId: business._id, active: true }).sort({ sortOrder: 1, createdAt: -1 }).select('-businessId -__v') : [],
     wantsBooking ? Service.find({ businessId: business._id, active: true }).sort({ createdAt: 1 }).select('-businessId -__v') : [],
   ]);
-  return { business: business.toPublicJSON(), products, services };
+  const [summary, latest] = await Promise.all([reviewService.summaryFor(business._id), reviewService.latestFor(business._id, 5)]);
+  return { business: business.toPublicJSON(), products, services, reviews: { ...summary, items: latest } };
 }
 
 // GET /public/:slug   (business + products + services in one call, so the page loads fast on weak data)
@@ -122,8 +125,48 @@ exports.getBookingByCode = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({ bookingCode: req.params.code });
   if (!booking) throw new AppError('Booking not found. Check the code and try again.', 404, 'NOT_FOUND');
   const business = await Business.findById(booking.businessId);
+  const existing = booking.status === 'completed' ? await Review.findOne({ bookingId: booking._id }).lean() : null;
   res.set('Cache-Control', 'no-store');
-  res.json({ status: 'success', data: { booking: shapeBooking(booking, business) } });
+  res.json({
+    status: 'success',
+    data: {
+      booking: {
+        ...shapeBooking(booking, business),
+        // Only a completed visit can be rated, and only once.
+        review: { canReview: booking.status === 'completed' && !existing, rating: existing?.rating ?? null },
+      },
+    },
+  });
+});
+
+// POST /public/bookings/:code/review  { rating, comment }  (the booking code is the customer's proof of visit)
+exports.createReview = asyncHandler(async (req, res) => {
+  const booking = await Booking.findOne({ bookingCode: req.params.code });
+  if (!booking) throw new AppError('Booking not found. Check the code and try again.', 404, 'NOT_FOUND');
+  if (booking.status !== 'completed') throw new AppError('You can rate a visit after the business marks it as done.', 409, 'NOT_COMPLETED');
+  try {
+    await Review.create({
+      businessId: booking.businessId,
+      bookingId: booking._id,
+      serviceName: booking.serviceName,
+      customerName: booking.customerName,
+      rating: req.body.rating,
+      comment: req.body.comment || undefined,
+    });
+  } catch (err) {
+    if (err.code === 11000) throw new AppError('You have already rated this visit. Thank you!', 409, 'ALREADY_REVIEWED');
+    throw err;
+  }
+  res.status(201).json({ status: 'success', message: 'Thank you for your review!', data: {} });
+});
+
+// GET /public/:slug/reviews?page=&limit=  (published reviews only)
+exports.listReviews = asyncHandler(async (req, res) => {
+  const business = await findActiveBusiness(req.params.slug);
+  const { page, limit, skip } = getPagination(req.query);
+  const [summary, items] = await Promise.all([reviewService.summaryFor(business._id), reviewService.latestFor(business._id, limit, skip)]);
+  res.set('Cache-Control', 'public, max-age=30');
+  res.json({ status: 'success', data: { ...summary, items, meta: pageMeta(page, limit, summary.count) } });
 });
 
 // POST /public/:slug/orders  (records an order that the customer then sends on WhatsApp)

@@ -1,0 +1,218 @@
+/* Owner reviews | reviews.component.scss */
+$green-800: #08302d;
+$green-600: #0e7c3f;
+$gold-500: #ffc21a;
+$paper: #f8f7f1;
+$tint: #efeee4;
+$white: #ffffff;
+$ink: #0b2b28;
+$muted: #4a625f;
+$line: rgba(8, 48, 45, 0.12);
+$danger: #b42318;
+$font: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', Roboto, system-ui, -apple-system, Arial, sans-serif;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  font-family: $font;
+  line-height: 1.55;
+  color: $ink;
+  background: $paper;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.back {
+  color: $green-600;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+h1 {
+  margin: 10px 0 4px;
+  font-size: 1.8rem;
+  color: $green-800;
+}
+
+.sub,
+.muted {
+  color: $muted;
+  margin: 0 0 18px;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 2px;
+  i {
+    color: rgba(8, 48, 45, 0.2);
+    &.on {
+      color: $gold-500;
+    }
+  }
+}
+
+.toast {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  background: $green-800;
+  color: $white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.err {
+  color: $danger;
+  font-weight: 600;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  background: $white;
+  border: 1px solid $line;
+  border-radius: 14px;
+  padding: 14px 16px;
+  &--hidden {
+    opacity: 0.7;
+    background: $tint;
+  }
+  &__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+}
+
+.who,
+.svc {
+  font-size: 0.85rem;
+  color: $muted;
+}
+
+.svc {
+  margin: 4px 0 0;
+}
+
+.text {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  &--none {
+    color: $muted;
+    font-style: italic;
+  }
+}
+
+.tag {
+  background: $tint;
+  border: 1px solid $line;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.reply {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid $green-600;
+  background: $tint;
+  border-radius: 0 10px 10px 0;
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.replybox {
+  margin-top: 10px;
+  label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  textarea {
+    width: 100%;
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid $line;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    resize: vertical;
+  }
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.count {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: $muted;
+}
+
+.btn {
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 2px solid $green-800;
+  &--primary {
+    background: $green-800;
+    color: $white;
+  }
+  &--ghost {
+    background: transparent;
+    color: $green-800;
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  &:focus-visible {
+    outline: 3px solid $gold-500;
+    outline-offset: 2px;
+  }
+}
+
+.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  color: $green-600;
+  cursor: pointer;
+}
+
+.pager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+}

@@ -16,7 +16,7 @@
     <h1>{{ notFound ? 'We could not find that page' : 'Something went wrong' }}</h1>
     <p>{{ notFound ? 'The link may be misspelled, or the business has not published its page yet.' : error }}</p>
     <button type="button" class="btn btn--solid" *ngIf="!notFound" (click)="load()">Try again</button>
-    <a class="btn btn--solid" routerLink="/" *ngIf="notFound">Go to LagosPages</a>
+    <a class="btn btn--solid" routerLink="/" *ngIf="notFound">Go to Bookam</a>
   </div>
 </main>
 
@@ -37,6 +37,10 @@
       <div class="hero__text">
         <h1 class="hero__name">{{ business.name }}</h1>
         <p class="hero__tag" *ngIf="business.tagline">{{ business.tagline }}</p>
+        <p class="hero__rating" *ngIf="reviews && reviews.count" [attr.aria-label]="reviews.average + ' out of 5 stars from ' + reviews.count + ' reviews'">
+          <span class="stars" aria-hidden="true"><i *ngFor="let n of starSet" class="fa-solid fa-star" [class.on]="filled(n, reviews.average)"></i></span>
+          <strong>{{ reviews.average }}</strong> <span>({{ reviews.count }} {{ reviews.count === 1 ? 'review' : 'reviews' }})</span>
+        </p>
         <p class="hero__loc" *ngIf="location">
           <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
           {{ location }}
@@ -203,6 +207,21 @@
       </section>
 
       <!-- ============================== HOURS ============================== -->
+      <section class="reviews" aria-labelledby="reviews-title" *ngIf="reviews && reviews.count">
+        <h2 id="reviews-title" class="title title--sm">What customers say</h2>
+        <ul class="reviews__list">
+          <li class="review" *ngFor="let r of reviews.items">
+            <div class="review__top">
+              <span class="stars" role="img" [attr.aria-label]="r.rating + ' out of 5'"><i *ngFor="let n of starSet" class="fa-solid fa-star" [class.on]="n <= r.rating"></i></span>
+              <span class="review__who">{{ r.name }} · {{ reviewDate(r.createdAt) }}</span>
+            </div>
+            <p class="review__text" *ngIf="r.comment">{{ r.comment }}</p>
+            <p class="review__svc" *ngIf="r.serviceName">{{ r.serviceName }}</p>
+            <p class="review__reply" *ngIf="r.reply"><strong>Reply from {{ business.name }}:</strong> {{ r.reply }}</p>
+          </li>
+        </ul>
+      </section>
+
       <section class="hours" aria-labelledby="hours-title">
         <h2 id="hours-title" class="title title--sm">Opening hours</h2>
         <dl class="hours__list">
@@ -214,7 +233,7 @@
       </section>
 
       <footer class="foot">
-        <a *ngIf="business.showBadge" class="foot__badge" routerLink="/">Powered by LagosPages. Get your own page free</a>
+        <a *ngIf="business.showBadge" class="foot__badge" routerLink="/">Powered by Bookam. Get your own page free</a>
       </footer>
     </div>
   </main>

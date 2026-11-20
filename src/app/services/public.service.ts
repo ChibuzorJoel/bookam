@@ -54,10 +54,26 @@ export interface PublicServiceItem {
   depositAmount: number;
 }
 
+export interface PublicReview {
+  rating: number;
+  comment: string;
+  name: string;
+  serviceName?: string;
+  reply: string;
+  createdAt: string;
+}
+
+export interface PublicReviews {
+  count: number;
+  average: number;
+  items: PublicReview[];
+}
+
 export interface PublicPage {
   business: PublicBusiness;
   products: PublicProduct[];
   services: PublicServiceItem[];
+  reviews?: PublicReviews;
 }
 
 export interface BookingView {
@@ -74,6 +90,7 @@ export interface BookingView {
   customerPhone: string;
   business: { name: string; slug: string; whatsappNumber?: string; address?: string; area?: string };
   whatsappLink: string | null;
+  review?: { canReview: boolean; rating: number | null };
 }
 
 export interface BookingCreated {
@@ -183,6 +200,13 @@ export class PublicService {
   order(code: string): Observable<OrderTracking> {
     return this.http.get<Envelope<OrderTracking>>(`${this.base}/orders/${encodeURIComponent(code)}`).pipe(
       map((r) => r.data),
+      catchError((e) => this.fail(e))
+    );
+  }
+
+  submitReview(code: string, body: { rating: number; comment?: string }): Observable<void> {
+    return this.http.post<unknown>(`${this.base}/bookings/${encodeURIComponent(code)}/review`, body).pipe(
+      map(() => undefined),
       catchError((e) => this.fail(e))
     );
   }

@@ -8,6 +8,7 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Meta, Title } from '@angular/platform-browser';
 import { of } from 'rxjs';
@@ -28,7 +29,7 @@ const POLL_TIMES = 10;
 @Component({
   selector: 'app-booking-confirmation',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './booking-confirmation.component.html',
   styleUrls: ['./booking-confirmation.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -140,6 +141,54 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
     return new Intl.DateTimeFormat('en-NG', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: LAGOS })
       .format(new Date(iso))
       .toLowerCase();
+  }
+
+  /* ---------------- Review ---------------- */
+  readonly starSet = [1, 2, 3, 4, 5];
+  rating = 0;
+  hoverRating = 0;
+  comment = '';
+  sending = false;
+  reviewError = '';
+  thanked = false;
+
+  setRating(n: number): void {
+    this.rating = n;
+    this.reviewError = '';
+  }
+
+  get canReview(): boolean {
+    return this.booking?.status === 'completed' && !!this.booking.review?.canReview && !this.thanked;
+  }
+
+  submitReview(): void {
+    if (!this.booking || this.sending) {
+      return;
+    }
+    if (!this.rating) {
+      this.reviewError = 'Tap a star to rate your visit.';
+      return;
+    }
+    this.sending = true;
+    this.reviewError = '';
+    const text = this.comment.trim();
+    this.api
+      .submitReview(this.booking.bookingCode, { rating: this.rating, ...(text ? { comment: text } : {}) })
+      .subscribe({
+        next: () => {
+          this.sending = false;
+          this.thanked = true;
+          this.cdr.markForCheck();
+        },
+        error: (e: ApiError) => {
+          this.sending = false;
+          this.reviewError = e.message;
+          if (e.status === 409 && this.booking?.review) {
+            this.booking.review.canReview = false;
+          }
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   retry(): void {

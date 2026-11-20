@@ -107,6 +107,7 @@ main:focus {
   border-radius: 50%;
   background: $green-600;
   color: $white;
+  font-size: 1.6rem;
 }
 
 .ticket {
@@ -196,5 +197,65 @@ main:focus {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+.rate {
+  margin: 20px 0 8px;
+  padding: 16px;
+  border: 1px solid $line;
+  border-radius: 14px;
+  background: $white;
+  text-align: left;
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+  }
+  &__stars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  &__star {
+    border: 0;
+    background: none;
+    padding: 4px;
+    font-size: 1.9rem;
+    line-height: 1;
+    cursor: pointer;
+    color: rgba(8, 48, 45, 0.2);
+    &.on {
+      color: $gold-500;
+    }
+    &:focus-visible {
+      outline: 3px solid $green-600;
+      border-radius: 8px;
+    }
+  }
+  &__label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid $line;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    resize: vertical;
+  }
+  &__err {
+    color: #b42318;
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  &__thanks {
+    margin: 0;
+    font-weight: 700;
+    text-align: center;
   }
 }
